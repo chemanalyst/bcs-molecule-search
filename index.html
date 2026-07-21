@@ -412,7 +412,7 @@
   .wizard-radio.selected{ background:var(--accent); color:#fff; border-color:var(--accent); }
   .wizard-nav{ display:flex; justify-content:space-between; margin-top:20px; }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.5.0/sql-wasm.js"></script>
 </head>
 <body>
 <div class="app">
@@ -2321,7 +2321,7 @@ function rowsToObjects(execResult){
 
 async function loadDatabaseAndInit(){
   try{
-    const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` });
+    const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.5.0/${file}` });
     const resp = await fetch('isogenerix.db');
     if(!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
     const buf = await resp.arrayBuffer();
