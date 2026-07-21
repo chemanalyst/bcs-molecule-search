@@ -435,13 +435,15 @@
 
     <div id="nav-post-search">
     <div class="nav-group-label">Workspace</div>
-    <div class="nav-item" data-view="builder">
+    <div class="nav-item nav-disabled" data-coming-soon="true">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       <span class="rail-label">Formulation Builder</span>
+      <span class="coming-soon-badge">Soon</span>
     </div>
-    <div class="nav-item" data-view="chat">
+    <div class="nav-item nav-disabled" data-coming-soon="true">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-4.4 7.4L3 21l2.1-4.4A8.5 8.5 0 1 1 21 11.5Z"/></svg>
       <span class="rail-label">Ask Isogenerix</span>
+      <span class="coming-soon-badge">Soon</span>
     </div>
 
     <div class="nav-group-label">Knowledge</div>
@@ -826,13 +828,16 @@ Magnesium stearate, 1.5"></textarea>
           <span class="search-back" style="margin:0; font-size:11.5px;" onclick="unlockRldContext()">Change molecule</span>
         </div>
 
+        <div id="nitrosamine-specific-finding" style="max-width:900px; margin-bottom:24px;"></div>
+
         <div class="feed-item" style="border:none; max-width:840px; margin-bottom:20px;">
           <div class="feed-body" style="line-height:1.6;">
             <strong>What NDSRIs are:</strong> Nitrosamine Drug Substance-Related Impurities are nitrosamines that share structural similarity to the API itself (as opposed to small-molecule nitrosamines like NDMA/NDEA, which can arise generically from manufacturing). They typically form when a secondary or tertiary amine in the API structure reacts with a nitrosating agent during synthesis, storage, or formulation. If your API contains a secondary/tertiary amine — this is worth screening for regardless of therapeutic class.
           </div>
         </div>
 
-        <div class="cite-num" style="display:block; margin-bottom:10px;">PUBLISHED COMPOUND-SPECIFIC AI LIMITS (SELECTED)</div>
+        <div class="cite-num" style="display:block; margin-bottom:10px;">GENERAL REFERENCE — COMMON SMALL-MOLECULE NITROSAMINE AI LIMITS</div>
+        <div class="detail-note" style="max-width:900px; margin-bottom:10px;">This table is background reference on the most common cross-contamination nitrosamines (relevant to any oral solid product regardless of API), not specific to your selected molecule — see the finding above for that.</div>
         <table class="data-table" style="max-width:900px; margin-bottom:24px;">
           <tr><th>Compound</th><th>AI limit (ng/day)</th><th>Notes</th></tr>
           <tr><td>NDMA (N-nitrosodimethylamine)</td><td>96</td><td>Small-molecule nitrosamine; common cross-contamination/process-related impurity</td></tr>
@@ -1564,6 +1569,66 @@ function calcNitrosamine(){
   out.querySelector('.calc-result-num').textContent = ppm.toFixed(4) + ' ppm';
   out.querySelector('.calc-result-label').textContent = `Control limit at ${mdd} mg/day MDD (AI = ${ai} ng/day)`;
 }
+function renderNitrosamineFinding(){
+  const container = document.getElementById('nitrosamine-specific-finding');
+  if(!container) return;
+  if(!lockedRldProduct){
+    container.innerHTML = '';
+    return;
+  }
+  const records = lockedRldProduct.nitrosamineRecords || [];
+  const p = lockedRldProduct;
+
+  if(records.length === 0){
+    container.innerHTML = `
+      <div class="card" style="border-color:var(--rule);">
+        <div class="card-top"><div><div class="card-title">${p.brand} (${p.inn})</div><div class="card-mono">No nitrosamine data on file</div></div><span class="pill pill-neutral">Not researched yet</span></div>
+        <div class="card-body" style="margin-top:8px; font-size:12.5px; color:var(--ink-muted);">This molecule hasn't been screened for nitrosamine/NDSRI risk in this dataset yet.</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = records.map(r => {
+    if(r.status === 'confirmed_limit'){
+      return `
+        <div class="card" style="border-color:#E3D4A8; background:#FFFDF7; margin-bottom:10px;">
+          <div class="card-top">
+            <div><div class="card-title">${p.brand} (${p.inn}) — confirmed finding</div><div class="card-mono">${r.compoundName}</div></div>
+            <span class="pill pill-warn">AI limit: ${r.aiLimitNgDay} ng/day</span>
+          </div>
+          <div class="card-body" style="margin-top:8px;">
+            <div style="font-size:12.5px; line-height:1.6; margin-bottom:8px;">${r.detail}</div>
+            ${r.aiLimitNote ? `<div class="detail-note" style="margin-bottom:6px;"><strong>Limit context:</strong> ${r.aiLimitNote}</div>` : ''}
+            <div class="detail-note">Source: ${r.source}</div>
+            <button class="btn-tiny" style="margin-top:8px;" onclick="document.getElementById('nitro-ai').value=${r.aiLimitNgDay}; calcNitrosamine();">Use this AI in the calculator below</button>
+          </div>
+        </div>`;
+    } else if(r.status === 'structural_flag'){
+      return `
+        <div class="card" style="border-color:var(--rule); margin-bottom:10px;">
+          <div class="card-top">
+            <div><div class="card-title">${p.brand} (${p.inn}) — structural screening flag</div><div class="card-mono">No published AI limit found</div></div>
+            <span class="pill pill-warn">Screen independently</span>
+          </div>
+          <div class="card-body" style="margin-top:8px;">
+            <div style="font-size:12.5px; line-height:1.6; margin-bottom:8px;">${r.detail}</div>
+            <div class="detail-note">${r.source}</div>
+          </div>
+        </div>`;
+    } else {
+      return `
+        <div class="card" style="border-color:var(--rule); margin-bottom:10px;">
+          <div class="card-top">
+            <div><div class="card-title">${p.brand} (${p.inn})</div><div class="card-mono">No compound-specific finding</div></div>
+            <span class="pill pill-neutral">Not found</span>
+          </div>
+          <div class="card-body" style="margin-top:8px;">
+            <div style="font-size:12.5px; line-height:1.6;">${r.detail}</div>
+          </div>
+        </div>`;
+    }
+  }).join('');
+}
 function applyNitrosamineLock(){
   const banner = document.getElementById('nitrosamine-locked-banner');
   if(!banner) return;
@@ -1577,6 +1642,7 @@ function applyNitrosamineLock(){
   } else {
     banner.style.display = 'none';
   }
+  renderNitrosamineFinding();
 }
 
 /* ---------------- SUBTABS ---------------- */
@@ -2273,6 +2339,9 @@ async function loadDatabaseAndInit(){
       const dpRows = rowsToObjects(db.exec(
         `SELECT test_name FROM spec_tests WHERE product_id = '${row.id}' AND test_type='drug_product' ORDER BY position`
       ));
+      const nitroRows = rowsToObjects(db.exec(
+        `SELECT status, compound_name, ai_limit_ng_day, ai_limit_note, detail, source FROM nitrosamine_records WHERE product_id = '${row.id}'`
+      ));
 
       const product = {
         brand: row.brand, inn: row.inn, company: row.company, form: row.form, route: row.route,
@@ -2283,6 +2352,10 @@ async function loadDatabaseAndInit(){
         excipients: excipRows.map(r => r.excipient),
         dsTests: dsRows.map(r => r.test_name),
         dpTests: dpRows.map(r => r.test_name),
+        nitrosamineRecords: nitroRows.map(r => ({
+          status: r.status, compoundName: r.compound_name, aiLimitNgDay: r.ai_limit_ng_day,
+          aiLimitNote: r.ai_limit_note, detail: r.detail, source: r.source,
+        })),
       };
       if(row.basic_record){
         product.basicRecord = true;
