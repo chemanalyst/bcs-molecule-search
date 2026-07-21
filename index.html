@@ -956,9 +956,8 @@ document.querySelectorAll('.nav-item').forEach(item=>{
     views.forEach(name=>{
       document.getElementById('view-'+name).classList.toggle('active', name===v);
     });
-    if(v === 'approved' && typeof unlockRldContext === 'function'){
-      unlockRldContext();
-    }
+    // Note: scoping to a molecule now persists across normal tab navigation --
+    // it only resets via the explicit "Change molecule"/"Show all products" links.
   });
 });
 
@@ -1266,7 +1265,7 @@ function buildRldCard(p, opts={}){
   }
 
   const analysisBtn = opts.showAnalysisLink !== false ? `<button class="btn-solid" style="padding:6px 12px; font-size:11.5px; margin-left:8px;" onclick="goToRldAnalysis(${idx})">Run Q1/Q2 + Biowaiver analysis →</button>` : '';
-  const scopeBtn = (opts.showScopeLink !== false && opts.showAnalysisLink === false) ? `<button class="btn-ghost" style="padding:6px 12px; font-size:11.5px; margin-left:8px;" onclick="scopeToolsToRld(${idx})">Focus Knowledge tools on this molecule</button>` : '';
+  const scopeBtn = opts.showScopeLink !== false ? `<button class="btn-ghost" style="padding:6px 12px; font-size:11.5px; margin-left:8px;" onclick="scopeToolsToRld(${idx})">Focus Knowledge tools on this molecule</button>` : '';
   return `
     <div class="card" style="max-width:860px; margin-bottom:12px;">
       <div class="card-top">
@@ -1970,7 +1969,18 @@ function renderLandscape(){
     list.innerHTML = `<div class="ledger-empty">No US/Canada generic-landscape data recorded for ${lockedRldProduct.brand} in this sample set yet — it's likely a biologic with no small-molecule generic pathway (see Patent &amp; Exclusivity Tracker instead).</div>`;
     return;
   }
-  list.innerHTML = data.map(p=>`
+  const mfrTable = (entries, marketLabel) => {
+    if(!entries || !entries.length) return `<div style="font-size:11.5px; color:var(--ink-muted); margin-top:6px;">No specific manufacturer names on file for ${marketLabel} yet.</div>`;
+    return `
+      <table class="data-table" style="margin-top:8px; font-size:11.5px;">
+        <tr><th>Company</th><th>Product / strength</th><th>Approved</th></tr>
+        ${entries.map(e => `<tr><td>${e.company}</td><td>${e.productName||''}${e.strength?' — '+e.strength:''}</td><td>${e.approvalDate||'—'}</td></tr>`).join('')}
+      </table>`;
+  };
+  list.innerHTML = data.map(p=>{
+    const matchedProduct = approvedProducts.find(ap => ap.inn === p.inn);
+    const mfrs = matchedProduct ? matchedProduct.genericManufacturers : {US:[],CA:[]};
+    return `
     <div class="card" style="margin-bottom:12px;">
       <div class="card-top">
         <div>
@@ -1979,11 +1989,15 @@ function renderLandscape(){
         </div>
       </div>
       <div class="card-body" style="margin-top:10px;">
-        <div class="detail-row"><div class="detail-label">🇺🇸 United States</div><div class="detail-val"><strong>${p.us.status}</strong><br>${p.us.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.us.source}</span></div></div>
-        <div class="detail-row"><div class="detail-label">🇨🇦 Canada</div><div class="detail-val"><strong>${p.ca.status}</strong><br>${p.ca.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.ca.source}</span></div></div>
+        <div class="detail-row"><div class="detail-label">🇺🇸 United States</div><div class="detail-val"><strong>${p.us.status}</strong><br>${p.us.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.us.source}</span>
+          ${mfrTable(mfrs.US, 'the US')}
+        </div></div>
+        <div class="detail-row"><div class="detail-label">🇨🇦 Canada</div><div class="detail-val"><strong>${p.ca.status}</strong><br>${p.ca.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.ca.source}</span>
+          ${mfrTable(mfrs.CA, 'Canada')}
+        </div></div>
       </div>
     </div>
-  `).join('') + `
+  `;}).join('') + `
     <div class="feed-item" style="border:none;">
       <div class="feed-body" style="line-height:1.6;">
         <strong>What a real pipeline would add:</strong> this proof-of-concept was hand-researched for two products. A production version would instead ingest FDA's Orange Book <code>products.txt</code> (RLD flag, applicant, approval date, TE code — updated monthly, daily for new generic approvals) and <code>patent.txt</code>/<code>exclusivity.txt</code>, plus Health Canada's Drug Product Database extract (~20,000 products, updated nightly) — joined to the EMA innovator profiles by active ingredient (INN), so every RLD in the system automatically shows its live US/Canada generic status without manual research per product.
@@ -2357,6 +2371,9 @@ async function loadDatabaseAndInit(){
       const nitroRows = rowsToObjects(db.exec(
         `SELECT status, compound_name, ai_limit_ng_day, ai_limit_note, detail, source FROM nitrosamine_records WHERE product_id = '${row.id}'`
       ));
+      const mfrRows = rowsToObjects(db.exec(
+        `SELECT market, company, product_name, strength, approval_date, source FROM generic_manufacturers WHERE product_id = '${row.id}'`
+      ));
 
       const product = {
         brand: row.brand, inn: row.inn, company: row.company, form: row.form, route: row.route,
@@ -2371,6 +2388,16 @@ async function loadDatabaseAndInit(){
           status: r.status, compoundName: r.compound_name, aiLimitNgDay: r.ai_limit_ng_day,
           aiLimitNote: r.ai_limit_note, detail: r.detail, source: r.source,
         })),
+        genericManufacturers: {
+          US: mfrRows.filter(r => r.market === 'US').map(r => ({
+            company: r.company, productName: r.product_name, strength: r.strength,
+            approvalDate: r.approval_date, source: r.source,
+          })),
+          CA: mfrRows.filter(r => r.market === 'CA').map(r => ({
+            company: r.company, productName: r.product_name, strength: r.strength,
+            approvalDate: r.approval_date, source: r.source,
+          })),
+        },
       };
       if(row.basic_record){
         product.basicRecord = true;
