@@ -542,7 +542,8 @@
 
             <div id="db-error-state" style="display:none;">
               <div class="search-landing-title" style="color:var(--danger);">Couldn't load the database</div>
-              <div class="search-landing-sub">isogenerix.db must be hosted in the same directory as this HTML file (e.g. both files pushed to the same GitHub Pages site). Opening this HTML file directly from disk, or from a location that can't also serve isogenerix.db, will show this error. See the browser console for details.</div>
+              <div class="search-landing-sub">isogenerix.db must be hosted in the same directory as this HTML file, served over HTTP(S) — not opened from disk. Actual error below:</div>
+              <div id="db-error-detail" style="text-align:left; background:var(--paper-dim); border:1px solid var(--rule); border-radius:8px; padding:12px 14px; font-family:var(--mono); font-size:11.5px; color:var(--danger); margin-top:10px; word-break:break-word;"></div>
             </div>
           </div>
         </div>
@@ -2321,10 +2322,24 @@ function rowsToObjects(execResult){
 
 async function loadDatabaseAndInit(){
   try{
+    if(typeof initSqlJs !== 'function'){
+      throw new Error('sql.js failed to load from the CDN (initSqlJs is not defined). Check that the <script src="...cdnjs.../sql.js/1.5.0/sql-wasm.js"> tag in <head> is reachable — try opening that URL directly in a new tab.');
+    }
     const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.5.0/${file}` });
+
     const resp = await fetch('isogenerix.db');
-    if(!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
+    if(!resp.ok){
+      throw new Error(`Fetch of isogenerix.db failed with HTTP ${resp.status} ${resp.statusText}. Check that isogenerix.db is in the exact same directory as this HTML file on your host, with that exact filename/casing.`);
+    }
+    const contentType = resp.headers.get('content-type') || '';
     const buf = await resp.arrayBuffer();
+    if(buf.byteLength < 10000){
+      // A real isogenerix.db is well over 100KB. A tiny response here almost
+      // always means the server returned an HTML error/redirect page instead
+      // of the actual file (e.g. a 404 page served with a 200 status, which
+      // some static hosts do) rather than a genuine fetch failure.
+      throw new Error(`isogenerix.db fetched successfully but is only ${buf.byteLength} bytes (expected 100KB+) and looks like ${contentType || 'an unexpected file type'} — this usually means the server returned an error/redirect page instead of the real database file. Confirm isogenerix.db was actually committed and pushed (not just index.html), and that it sits alongside index.html, not in a different folder.`);
+    }
     const db = new SQL.Database(new Uint8Array(buf));
 
     const productRows = rowsToObjects(db.exec('SELECT * FROM products'));
@@ -2415,6 +2430,7 @@ async function loadDatabaseAndInit(){
     console.error('Database load failed:', err);
     document.getElementById('db-loading-state').style.display = 'none';
     document.getElementById('db-error-state').style.display = 'block';
+    document.getElementById('db-error-detail').textContent = err && err.message ? err.message : String(err);
   }
 }
 loadDatabaseAndInit();
