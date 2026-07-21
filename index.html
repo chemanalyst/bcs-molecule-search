@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Isogenerix — Generic Development Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF9F6;
+    --paper-dim:#F2F0E9;
+    --panel:#FFFFFF;
+    --ink:#1A2332;
+    --ink-muted:#5B6472;
+    --rule:#DEDACD;
+    --rule-soft:#EAE7DC;
+    --accent:#0F6B5C;
+    --accent-dim:#E3EEEA;
+    --accent-ink:#0B4E43;
+    --flag:#B8842A;
+    --flag-dim:#F5EBD8;
+    --danger:#A23B2E;
+    --serif:'Source Serif 4', Georgia, serif;
+    --sans:'Inter', -apple-system, sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--sans);
+    background:var(--paper);
+    color:var(--ink);
+    overflow:hidden;
+  }
+  ::selection{background:var(--accent-dim); color:var(--accent-ink);}
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--rule); border-radius:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  .app{
+    display:grid;
+    grid-template-columns:236px 1fr 300px;
+    height:100vh;
+  }
+  @media (max-width: 980px){
+    .app{grid-template-columns:60px 1fr; }
+    .ledger{display:none;}
+    .rail-label{display:none;}
+  }
+
+  /* ---------- LEFT RAIL ---------- */
+  .rail{
+    background:var(--paper-dim);
+    border-right:1px solid var(--rule);
+    display:flex;
+    flex-direction:column;
+    padding:18px 12px;
+    overflow-y:auto;
+    min-height:0;
+  }
+  .brand{
+    display:flex; align-items:center; gap:9px;
+    padding:4px 8px 20px 8px;
+    border-bottom:1px solid var(--rule);
+    margin-bottom:16px;
+  }
+  .brand-mark{
+    width:26px; height:26px; flex:0 0 auto;
+    border-radius:3px;
+    background:var(--accent);
+    position:relative;
+  }
+  .brand-mark::before, .brand-mark::after{
+    content:''; position:absolute; background:var(--paper);
+  }
+  .brand-mark::before{ /* horizontal trace line */
+    width:14px; height:2px; left:6px; top:12px;
+  }
+  .brand-mark::after{ /* vertical tick */
+    width:2px; height:8px; left:6px; top:6px;
+  }
+  .brand-text{font-family:var(--serif); font-weight:600; font-size:16.5px; letter-spacing:0.2px;}
+  .brand-sub{font-family:var(--mono); font-size:9px; color:var(--ink-muted); letter-spacing:0.5px; text-transform:uppercase; margin-top:1px;}
+
+  .nav-group-label{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:1px; text-transform:uppercase;
+    color:var(--ink-muted); padding:14px 10px 6px 10px;
+  }
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    padding:8px 10px; border-radius:6px; cursor:pointer;
+    font-size:13.5px; color:var(--ink); font-weight:500;
+    transition:background .12s ease;
+  }
+  .nav-item:hover{background:var(--rule-soft);}
+  .nav-item.active{background:var(--accent-dim); color:var(--accent-ink);}
+  .nav-icon{width:16px; height:16px; flex:0 0 auto; opacity:.85;}
+  .rail-foot{margin-top:auto; padding:10px 10px 2px; border-top:1px solid var(--rule);}
+  .rail-foot-line{font-family:var(--mono); font-size:9.5px; color:var(--ink-muted); line-height:1.6;}
+
+  #nav-post-search{ display:none; }
+  #nav-post-search.revealed{ display:block; animation:navFadeIn .35s ease; }
+  @keyframes navFadeIn{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);} }
+  .nav-item.nav-disabled{ cursor:default; opacity:.55; position:relative; }
+  .nav-item.nav-disabled:hover{ background:none; }
+  .coming-soon-badge{
+    margin-left:auto; font-family:var(--mono); font-size:8px; letter-spacing:.4px; text-transform:uppercase; font-weight:700;
+    background:var(--rule-soft); color:var(--ink-muted); padding:2px 6px; border-radius:3px; flex:0 0 auto;
+  }
+
+  /* ---------- CENTER ---------- */
+  .center{
+    display:flex; flex-direction:column; min-width:0; min-height:0;
+    background:var(--paper);
+  }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 26px; border-bottom:1px solid var(--rule);
+    background:var(--paper);
+  }
+  .topbar-title{font-family:var(--serif); font-size:18px; font-weight:600;}
+  .topbar-meta{font-family:var(--mono); font-size:10.5px; color:var(--ink-muted); margin-top:2px; letter-spacing:.3px;}
+  .ctd-tag{
+    font-family:var(--mono); font-size:10px; letter-spacing:.5px;
+    color:var(--accent-ink); background:var(--accent-dim);
+    padding:3px 8px; border-radius:3px; border:1px solid #CFE3DC;
+  }
+
+  .view{ flex:1; min-height:0; overflow:hidden; display:none; }
+  .view.active{ display:flex; flex-direction:column; }
+
+  /* ---- Chat ---- */
+  #view-chat .thread{ flex:1; min-height:0; overflow-y:auto; padding:22px 30px 10px; }
+  .msg{ max-width:720px; margin:0 auto 22px; }
+  .msg-role{
+    font-family:var(--mono); font-size:10px; letter-spacing:.6px; text-transform:uppercase;
+    color:var(--ink-muted); margin-bottom:6px; display:flex; gap:8px; align-items:center;
+  }
+  .role-dot{width:6px; height:6px; border-radius:50%; background:var(--ink-muted);}
+  .role-dot.ai{background:var(--accent);}
+  .msg-body{ font-size:14.5px; line-height:1.68; }
+  .msg-body p{ margin-bottom:10px; }
+  .msg-body ul, .msg-body ol{ margin:6px 0 12px 20px; }
+  .msg-body li{ margin-bottom:5px; }
+  .msg-body strong{font-weight:600;}
+  .msg-body code{font-family:var(--mono); background:var(--rule-soft); padding:1px 5px; border-radius:3px; font-size:13px;}
+  .msg.user .msg-body{
+    background:var(--paper-dim); border:1px solid var(--rule); border-radius:8px 8px 8px 2px;
+    padding:12px 15px; display:inline-block;
+  }
+  .cite-tag{
+    font-family:var(--mono); font-size:10.5px; color:var(--accent-ink); background:var(--accent-dim);
+    padding:0 4px; border-radius:2px; cursor:pointer; font-weight:600; border:1px solid #CFE3DC;
+  }
+  .thinking{ display:flex; gap:5px; align-items:center; padding:4px 0; }
+  .thinking span{ width:5px; height:5px; border-radius:50%; background:var(--ink-muted); animation:pulse 1.1s infinite ease-in-out; }
+  .thinking span:nth-child(2){animation-delay:.15s;} .thinking span:nth-child(3){animation-delay:.3s;}
+  @keyframes pulse{ 0%,80%,100%{opacity:.25;} 40%{opacity:1;} }
+
+  .composer{ border-top:1px solid var(--rule); padding:14px 30px 20px; background:var(--paper); }
+  .composer-inner{ max-width:720px; margin:0 auto; }
+  .suggestions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .sugg{
+    font-size:12px; font-family:var(--sans); color:var(--ink-muted);
+    border:1px solid var(--rule); background:var(--panel); padding:6px 11px; border-radius:16px; cursor:pointer;
+  }
+  .sugg:hover{ border-color:var(--accent); color:var(--accent-ink); }
+  .input-row{ display:flex; gap:10px; align-items:flex-end; }
+  #chat-input{
+    flex:1; resize:none; font-family:var(--sans); font-size:14px; line-height:1.5;
+    border:1px solid var(--rule); border-radius:9px; padding:12px 14px; background:var(--panel);
+    max-height:140px; min-height:44px; color:var(--ink);
+  }
+  #chat-input:focus{ outline:none; border-color:var(--accent); }
+  .send-btn{
+    background:var(--accent); color:#fff; border:none; border-radius:9px; padding:12px 18px;
+    font-family:var(--sans); font-weight:600; font-size:13px; cursor:pointer; flex:0 0 auto;
+  }
+  .send-btn:hover{ background:var(--accent-ink); }
+  .send-btn:disabled{ background:var(--rule); cursor:not-allowed; }
+  .composer-note{ font-family:var(--mono); font-size:9.5px; color:var(--ink-muted); margin-top:8px; text-align:center; }
+
+  /* ---------- RIGHT LEDGER ---------- */
+  .ledger{
+    background:var(--paper-dim); border-left:1px solid var(--rule);
+    display:flex; flex-direction:column; min-width:0; min-height:0;
+  }
+  .ledger-head{ padding:16px 18px 10px; border-bottom:1px solid var(--rule); }
+  .ledger-title{ font-family:var(--serif); font-weight:600; font-size:14.5px; }
+  .ledger-sub{ font-family:var(--mono); font-size:9.5px; color:var(--ink-muted); margin-top:2px; }
+  .ledger-body{ flex:1; min-height:0; overflow-y:auto; padding:12px 14px; }
+  .ledger-empty{ font-size:12.5px; color:var(--ink-muted); padding:20px 6px; line-height:1.6; }
+  .cite-entry{
+    background:var(--panel); border:1px solid var(--rule); border-radius:7px;
+    padding:10px 11px; margin-bottom:9px;
+  }
+  .cite-num{ font-family:var(--mono); font-size:10px; color:var(--accent-ink); font-weight:700; }
+  .cite-badge{
+    display:inline-block; font-family:var(--mono); font-size:8.5px; letter-spacing:.4px; text-transform:uppercase;
+    padding:2px 6px; border-radius:3px; margin-left:6px; font-weight:600;
+  }
+  .badge-ich{ background:#E3EEEA; color:#0B4E43; }
+  .badge-usp{ background:#EFE6F5; color:#5B3A73; }
+  .badge-lit{ background:#F5EBD8; color:#8A5E17; }
+  .badge-db{ background:#E5EAF2; color:#2E4472; }
+  .cite-label{ font-size:12.5px; font-weight:600; margin-top:5px; line-height:1.4; }
+  .cite-detail{ font-size:11.5px; color:var(--ink-muted); margin-top:3px; line-height:1.5; }
+
+  /* ---------- Generic module layout ---------- */
+  .module-wrap{ flex:1; min-height:0; overflow-y:auto; padding:24px 30px 40px; }
+  .module-head{ margin-bottom:20px; max-width:820px; }
+  .module-title{ font-family:var(--serif); font-size:22px; font-weight:600; }
+  .module-desc{ font-size:13.5px; color:var(--ink-muted); margin-top:5px; max-width:640px; line-height:1.55; }
+
+  .search-bar{
+    display:flex; gap:8px; max-width:520px; margin:16px 0 22px;
+  }
+  .search-bar input{
+    flex:1; padding:9px 12px; border:1px solid var(--rule); border-radius:7px; font-size:13px; font-family:var(--sans); background:var(--panel);
+  }
+  .search-bar input:focus{outline:none; border-color:var(--accent);}
+
+  .grid-cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; max-width:1000px; }
+  .card{
+    background:var(--panel); border:1px solid var(--rule); border-radius:9px; padding:14px 15px; cursor:default;
+  }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .card-title{ font-weight:600; font-size:14px; }
+  .card-mono{ font-family:var(--mono); font-size:10.5px; color:var(--ink-muted); margin-top:3px; }
+  .card-body{ font-size:12.5px; color:var(--ink-muted); line-height:1.55; margin-top:8px; }
+  .pill{
+    font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.4px; font-weight:700;
+    padding:2px 7px; border-radius:3px; flex:0 0 auto;
+  }
+  .pill-ok{ background:var(--accent-dim); color:var(--accent-ink); }
+  .pill-warn{ background:var(--flag-dim); color:var(--flag); }
+  .pill-neutral{ background:var(--rule-soft); color:var(--ink-muted); }
+
+  table.data-table{ width:100%; border-collapse:collapse; max-width:900px; font-size:12.5px; }
+  table.data-table th{
+    text-align:left; font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.4px;
+    color:var(--ink-muted); border-bottom:1px solid var(--rule); padding:8px 10px;
+  }
+  table.data-table td{ padding:9px 10px; border-bottom:1px solid var(--rule-soft); }
+  table.data-table tr:hover td{ background:var(--paper-dim); }
+
+  .feed-item{
+    border-bottom:1px solid var(--rule-soft); padding:14px 0; max-width:760px;
+  }
+  .feed-top{ display:flex; gap:8px; align-items:center; margin-bottom:4px; }
+  .feed-date{ font-family:var(--mono); font-size:10px; color:var(--ink-muted); }
+  .feed-title{ font-weight:600; font-size:14px; }
+  .feed-body{ font-size:12.5px; color:var(--ink-muted); margin-top:5px; line-height:1.55; }
+
+  /* CMC writer */
+  .cmc-layout{ display:grid; grid-template-columns:220px 1fr; gap:0; flex:1; min-height:0; overflow:hidden; }
+  .cmc-toc{ border-right:1px solid var(--rule); padding:18px 12px; overflow-y:auto; min-height:0; }
+  .cmc-toc-item{ padding:7px 10px; font-size:12.5px; border-radius:6px; cursor:pointer; margin-bottom:2px; color:var(--ink-muted); }
+  .cmc-toc-item.active{ background:var(--accent-dim); color:var(--accent-ink); font-weight:600; }
+  .cmc-toc-num{ font-family:var(--mono); font-size:10px; margin-right:6px; }
+  .cmc-editor{ padding:24px 34px; overflow-y:auto; min-height:0; max-width:760px; }
+  .cmc-section-title{ font-family:var(--serif); font-size:19px; font-weight:600; margin-bottom:4px; }
+  .cmc-section-code{ font-family:var(--mono); font-size:10.5px; color:var(--accent-ink); margin-bottom:16px; }
+  .cmc-editor textarea{
+    width:100%; min-height:340px; border:1px solid var(--rule); border-radius:8px; padding:16px;
+    font-family:var(--sans); font-size:13.5px; line-height:1.65; background:var(--panel); color:var(--ink); resize:vertical;
+  }
+  .cmc-editor textarea:focus{ outline:none; border-color:var(--accent); }
+  .cmc-actions{ display:flex; gap:8px; margin-top:12px; }
+  .btn-ghost{
+    font-family:var(--sans); font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:7px;
+    border:1px solid var(--rule); background:var(--panel); color:var(--ink); cursor:pointer;
+  }
+  .btn-ghost:hover{ border-color:var(--accent); color:var(--accent-ink); }
+  .btn-solid{
+    font-family:var(--sans); font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:7px;
+    border:none; background:var(--accent); color:#fff; cursor:pointer;
+  }
+  .btn-solid:hover{ background:var(--accent-ink); }
+
+  /* Stability calc */
+  .calc-panel{
+    background:var(--panel); border:1px solid var(--rule); border-radius:10px; padding:20px; max-width:520px; margin-bottom:22px;
+  }
+  .calc-row{ display:flex; gap:12px; margin-bottom:12px; }
+  .calc-field{ flex:1; }
+  .calc-field label{ display:block; font-family:var(--mono); font-size:10px; text-transform:uppercase; color:var(--ink-muted); margin-bottom:5px; }
+  .calc-field input{
+    width:100%; padding:8px 10px; border:1px solid var(--rule); border-radius:6px; font-size:13px; font-family:var(--sans);
+  }
+  .calc-result{
+    margin-top:14px; padding:14px; background:var(--accent-dim); border-radius:8px; border:1px solid #CFE3DC;
+  }
+  .calc-result-num{ font-family:var(--serif); font-size:24px; font-weight:600; color:var(--accent-ink); }
+  .calc-result-label{ font-family:var(--mono); font-size:10px; color:var(--accent-ink); text-transform:uppercase; letter-spacing:.4px; margin-top:2px;}
+
+  /* Projects */
+  .proj-row{
+    display:flex; align-items:center; gap:14px; padding:13px 4px; border-bottom:1px solid var(--rule-soft);
+    max-width:900px; cursor:default;
+  }
+  .proj-icon{ width:34px; height:34px; border-radius:7px; background:var(--accent-dim); flex:0 0 auto; display:flex; align-items:center; justify-content:center; color:var(--accent-ink); font-family:var(--serif); font-weight:600; font-size:14px; }
+  .proj-name{ font-weight:600; font-size:13.5px; }
+  .proj-meta{ font-family:var(--mono); font-size:10.5px; color:var(--ink-muted); margin-top:2px; }
+  .proj-stage{ margin-left:auto; }
+
+  .cmc-detail-panel{
+    max-height:0; overflow:hidden; transition:max-height .25s ease;
+    border-top:1px dashed var(--rule); margin-top:0;
+  }
+  .cmc-detail-panel.open{ max-height:900px; margin-top:12px; padding-top:12px; }
+  .detail-row{ display:grid; grid-template-columns:170px 1fr; gap:10px; margin-bottom:10px; align-items:start; }
+  .detail-label{ font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--accent-ink); padding-top:1px; }
+  .detail-val{ font-size:12.5px; color:var(--ink); line-height:1.55; }
+  .detail-val ul{ margin:0 0 0 16px; }
+  .detail-val li{ margin-bottom:3px; }
+  .detail-note{ font-size:11px; color:var(--ink-muted); font-style:italic; margin-top:6px; border-top:1px solid var(--rule-soft); padding-top:8px; }
+
+  .subtabs{ display:flex; gap:4px; border-bottom:1px solid var(--rule); margin-bottom:20px; max-width:900px; flex-wrap:wrap; }
+  .subtab{
+    font-family:var(--sans); font-size:12.5px; font-weight:600; color:var(--ink-muted);
+    padding:9px 14px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .subtab:hover{ color:var(--ink); }
+  .subtab.active{ color:var(--accent-ink); border-bottom-color:var(--accent); }
+  .subview{ display:none; }
+  .subview.active{ display:block; }
+
+  .flag-row{
+    display:flex; gap:8px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--rule-soft); font-size:12.5px;
+  }
+  .flag-icon{ flex:0 0 auto; width:16px; text-align:center; font-weight:700; }
+  .flag-ok{ color:var(--accent-ink); }
+  .flag-warn{ color:var(--flag); }
+  .flag-bad{ color:var(--danger); }
+
+  .sponsored-card{
+    border:1px solid #E3D4A8 !important; background:#FFFDF7 !important;
+    position:relative;
+  }
+  .sponsored-badge{
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.5px; text-transform:uppercase; font-weight:700;
+    color:var(--flag); background:var(--flag-dim); padding:2px 7px; border-radius:3px; border:1px solid #E3D4A8;
+  }
+  .supplier-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:7px 0; border-bottom:1px solid var(--rule-soft); font-size:12px;
+  }
+  .supplier-row:last-child{ border-bottom:none; }
+  .supplier-name{ font-weight:600; }
+  .supplier-co{ color:var(--ink-muted); font-size:11px; }
+  .btn-tiny{
+    font-family:var(--sans); font-size:11px; font-weight:600; padding:5px 10px; border-radius:6px;
+    border:1px solid var(--rule); background:var(--panel); color:var(--accent-ink); cursor:pointer; white-space:nowrap;
+  }
+  .btn-tiny:hover{ border-color:var(--accent); background:var(--accent-dim); }
+  .cdmo-tags{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .cdmo-tag{ font-family:var(--mono); font-size:9.5px; background:var(--rule-soft); color:var(--ink-muted); padding:2px 7px; border-radius:3px; }
+
+  /* Molecule Search landing */
+  .search-landing{
+    display:flex; align-items:center; justify-content:center; min-height:70vh; padding:20px;
+  }
+  .search-landing-inner{ text-align:center; max-width:520px; }
+  .search-landing-title{ font-family:var(--serif); font-size:26px; font-weight:600; margin-bottom:8px; }
+  .search-landing-sub{ font-size:13.5px; color:var(--ink-muted); line-height:1.6; margin-bottom:28px; }
+  .search-form{ display:flex; flex-direction:column; gap:14px; text-align:left; }
+  .search-field label{ display:block; font-family:var(--mono); font-size:10px; text-transform:uppercase; color:var(--ink-muted); margin-bottom:5px; letter-spacing:.3px; }
+  .search-field select{
+    width:100%; padding:10px 12px; border:1px solid var(--rule); border-radius:8px; font-size:13.5px; font-family:var(--sans); background:var(--panel); color:var(--ink);
+  }
+  .search-field select:focus{ outline:none; border-color:var(--accent); }
+
+  .ai-search-bar{ display:flex; gap:8px; margin-bottom:14px; }
+  .ai-search-bar input{
+    flex:1; padding:13px 16px; border:1px solid var(--rule); border-radius:9px; font-size:14px; font-family:var(--sans);
+    background:var(--panel); color:var(--ink);
+  }
+  .ai-search-bar input:focus{ outline:none; border-color:var(--accent); }
+  .ai-search-examples{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-bottom:26px; }
+  .ai-example-chip{
+    font-size:11.5px; font-family:var(--sans); color:var(--ink-muted); border:1px solid var(--rule); background:var(--panel);
+    padding:6px 12px; border-radius:14px; cursor:pointer; text-align:left;
+  }
+  .ai-example-chip:hover{ border-color:var(--accent); color:var(--accent-ink); }
+  .search-advanced-toggle{
+    font-size:12px; color:var(--ink-muted); cursor:pointer; text-align:center; margin-bottom:14px;
+  }
+  .search-advanced-toggle span{ color:var(--accent-ink); font-weight:600; }
+  .search-advanced-toggle:hover span{ text-decoration:underline; }
+  .search-back{ font-family:var(--sans); font-size:12.5px; color:var(--accent-ink); cursor:pointer; font-weight:600; margin-bottom:16px; display:inline-block; }
+
+  /* Formulation Builder wizard */
+  .wizard-steps{ display:flex; gap:4px; margin-bottom:22px; max-width:820px; flex-wrap:wrap; }
+  .wizard-step-dot{
+    font-family:var(--mono); font-size:10px; padding:5px 10px; border-radius:14px; background:var(--rule-soft); color:var(--ink-muted); font-weight:600;
+  }
+  .wizard-step-dot.current{ background:var(--accent); color:#fff; }
+  .wizard-step-dot.done{ background:var(--accent-dim); color:var(--accent-ink); }
+  .wizard-panel{ max-width:640px; background:var(--panel); border:1px solid var(--rule); border-radius:10px; padding:22px; }
+  .wizard-field{ margin-bottom:16px; }
+  .wizard-field label{ display:block; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; color:var(--ink-muted); margin-bottom:6px; letter-spacing:.3px; }
+  .wizard-field input[type=text], .wizard-field input[type=number], .wizard-field select, .wizard-field textarea{
+    width:100%; padding:9px 12px; border:1px solid var(--rule); border-radius:7px; font-size:13.5px; font-family:var(--sans); background:var(--paper);
+  }
+  .wizard-field textarea{ resize:vertical; min-height:70px; }
+  .wizard-radio-group{ display:flex; gap:8px; flex-wrap:wrap; }
+  .wizard-radio{
+    font-size:12.5px; padding:7px 13px; border:1px solid var(--rule); border-radius:16px; cursor:pointer; background:var(--paper); user-select:none;
+  }
+  .wizard-radio.selected{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .wizard-nav{ display:flex; justify-content:space-between; margin-top:20px; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- LEFT RAIL -->
+  <div class="rail">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-text">Isogenerix</div>
+        <div class="brand-sub">Generic Development Intelligence</div>
+      </div>
+    </div>
+
+    <div class="nav-group-label">Discover</div>
+    <div class="nav-item active" data-view="search">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <span class="rail-label">Molecule Search</span>
+    </div>
+
+    <div id="nav-post-search">
+    <div class="nav-group-label">Workspace</div>
+    <div class="nav-item" data-view="builder">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      <span class="rail-label">Formulation Builder</span>
+    </div>
+    <div class="nav-item" data-view="chat">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-4.4 7.4L3 21l2.1-4.4A8.5 8.5 0 1 1 21 11.5Z"/></svg>
+      <span class="rail-label">Ask Isogenerix</span>
+    </div>
+
+    <div class="nav-group-label">Knowledge</div>
+    <div class="nav-item" data-view="approved">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6 9 17l-5-5"/></svg>
+      <span class="rail-label">Generic vs. RLD</span>
+    </div>
+    <div class="nav-item" data-view="excipients">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v6l-5 9a2 2 0 0 0 1.8 3h12.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M8.5 3h7"/></svg>
+      <span class="rail-label">Excipient Library</span>
+    </div>
+    <div class="nav-item nav-disabled" data-coming-soon="true">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <span class="rail-label">CDMO Directory</span>
+      <span class="coming-soon-badge">Soon</span>
+    </div>
+    <div class="nav-item" data-view="regulatory">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5l-8-3Z"/></svg>
+      <span class="rail-label">Regulatory Intelligence</span>
+    </div>
+    <div class="nav-item" data-view="stability">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2v9.5L4.5 20a1 1 0 0 0 .9 1.5h13.2a1 1 0 0 0 .9-1.5L14 11.5V2"/><path d="M9 2h6"/></svg>
+      <span class="rail-label">Stability Science</span>
+    </div>
+    <div class="nav-item" data-view="impurity">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <span class="rail-label">Impurity Limits</span>
+    </div>
+    <div class="nav-item" data-view="nitrosamine">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 2.5 17a1.8 1.8 0 0 0 1.5 2.7h16a1.8 1.8 0 0 0 1.5-2.7L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z"/></svg>
+      <span class="rail-label">Nitrosamine Risk</span>
+    </div>
+
+    <div class="nav-group-label">Authoring</div>
+    <div class="nav-item nav-disabled" data-coming-soon="true">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+      <span class="rail-label">CMC Writer</span>
+      <span class="coming-soon-badge">Soon</span>
+    </div>
+    </div>
+
+    <div class="rail-foot">
+      <div class="rail-foot-line">21 CFR Part 11 · ICH Q8(R2)/Q9/Q10</div>
+      <div class="rail-foot-line">Prototype workspace</div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center">
+
+    <!-- MOLECULE SEARCH VIEW (landing) -->
+    <div class="view active" id="view-search">
+      <div class="module-wrap" id="search-wrap">
+        <div class="search-landing" id="search-landing">
+          <div class="search-landing-inner" style="max-width:640px;">
+            <div class="brand-mark" style="width:44px; height:44px; margin:0 auto 18px;"></div>
+
+            <div id="db-loading-state">
+              <div class="search-landing-title">Loading regulatory database…</div>
+              <div class="search-landing-sub">Fetching isogenerix.db and initializing the query engine — this is a one-time, sub-second load.</div>
+              <div class="thinking" style="justify-content:center; padding:10px 0;"><span></span><span></span><span></span></div>
+            </div>
+
+            <div id="db-ready-state" style="display:none;">
+              <div class="search-landing-title">Ask across public regulatory data</div>
+              <div class="search-landing-sub">Search the way you'd ask a colleague — by excipient, dosage form, BCS class, route, or packaging. Answers are grounded only in what's actually in this dataset today, and say so plainly when they're not.</div>
+
+              <div class="ai-search-bar">
+                <input type="text" id="ai-search-input" placeholder='e.g. "Show approved tablets with croscarmellose sodium" or "Which RLDs are BCS Class II?"'>
+                <button class="btn-solid" style="padding:12px 20px; font-size:13.5px;" onclick="runIntelligentSearch()">Search</button>
+              </div>
+              <div class="ai-search-examples">
+                <div class="ai-example-chip" onclick="runIntelligentSearch('Show all approved products containing mannitol')">Show all approved products containing mannitol</div>
+                <div class="ai-example-chip" onclick="runIntelligentSearch('Which reference products are BCS Class II?')">Which reference products are BCS Class II?</div>
+                <div class="ai-example-chip" onclick="runIntelligentSearch('List products with patents expiring before 2029')">Patents expiring before 2029?</div>
+                <div class="ai-example-chip" onclick="runIntelligentSearch('Find products using croscarmellose sodium as disintegrant')">Products using croscarmellose sodium</div>
+              </div>
+
+              <div class="search-advanced-toggle" onclick="toggleAdvancedSearch()">Prefer dropdown filters instead? <span id="advanced-toggle-label">Show structured search →</span></div>
+              <div class="search-form" id="advanced-search-form" style="display:none;">
+                <div class="search-field">
+                  <label>Molecule (INN)</label>
+                  <select id="s-molecule"><option value="">Select a molecule…</option></select>
+                </div>
+                <div class="search-field">
+                  <label>Dosage form</label>
+                  <select id="s-form"><option value="">Any dosage form</option></select>
+                </div>
+                <div class="search-field">
+                  <label>Route of administration</label>
+                  <select id="s-route"><option value="">Any route</option></select>
+                </div>
+                <button class="btn-solid" style="padding:12px 22px; font-size:13.5px; margin-top:6px;" onclick="runMoleculeSearch()">Search reference products</button>
+              </div>
+            </div>
+
+            <div id="db-error-state" style="display:none;">
+              <div class="search-landing-title" style="color:var(--danger);">Couldn't load the database</div>
+              <div class="search-landing-sub">isogenerix.db must be hosted in the same directory as this HTML file (e.g. both files pushed to the same GitHub Pages site). Opening this HTML file directly from disk, or from a location that can't also serve isogenerix.db, will show this error. See the browser console for details.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="search-results" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- FORMULATION BUILDER VIEW -->
+    <div class="view" id="view-builder">
+      <div class="module-wrap">
+        <div class="module-head">
+          <div class="module-title">Formulation Builder</div>
+          <div class="module-desc">An interactive wizard: describe the API and target product, and get an AI-reasoned starting point for dosage form, excipients, process, and risk — a first draft for your team to validate, not a final formulation.</div>
+        </div>
+
+        <div id="builder-wizard"></div>
+        <div id="builder-output" style="max-width:820px; margin-top:20px;"></div>
+      </div>
+    </div>
+
+    <!-- CHAT VIEW -->
+    <div class="view" id="view-chat">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Ask Isogenerix</div>
+          <div class="topbar-meta">FORMULATION · REGULATORY · CMC REASONING</div>
+        </div>
+        <div class="ctd-tag">SESSION LIVE</div>
+      </div>
+      <div class="thread" id="thread"></div>
+      <div class="composer">
+        <div class="composer-inner">
+          <div class="suggestions" id="suggestions">
+            <div class="sugg" data-q="Recommend a disintegrant and binder system for a high-dose (500mg) poorly compressible API via direct compression.">Direct compression excipients for a 500mg poorly-compressible API</div>
+            <div class="sugg" data-q="What ICH stability zone conditions apply for a product launching in Brazil and India, and what's the minimum long-term dataset before filing?">Stability zones for a Brazil/India launch filing</div>
+            <div class="sugg" data-q="Draft a QbD risk assessment summary (Ishikawa-style) for tablet dissolution as a CQA in a wet granulation process.">QbD risk assessment for dissolution as a CQA</div>
+            <div class="sugg" data-q="Compare croscarmellose sodium vs sodium starch glycolate as superdisintegrants for a moisture-sensitive formulation.">Croscarmellose vs sodium starch glycolate in a moisture-sensitive tablet</div>
+          </div>
+          <div class="input-row">
+            <textarea id="chat-input" placeholder="Ask about excipients, stability, regulatory strategy, formulation design…" rows="1"></textarea>
+            <button class="send-btn" id="send-btn">Ask</button>
+          </div>
+          <div class="composer-note">Responses are AI-generated reasoning for R&D support — verify against primary compendia and current guidance before filing.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPROVED PRODUCTS / RLD VIEW -->
+    <div class="view" id="view-approved">
+      <div class="module-wrap">
+        <div class="module-head">
+          <div class="module-title">Generic vs. Reference Listed Drug (RLD)</div>
+          <div class="module-desc">Reference product profiles sourced from public assessment reports (EMA EPAR / FDA), plus tools for Q1/Q2 sameness assessment, BCS-based biowaiver strategy, and patent/exclusivity landscape.</div>
+        </div>
+
+        <div class="subtabs" id="approved-subtabs">
+          <div class="subtab active" data-sub="rld">RLD Profiles</div>
+          <div class="subtab" data-sub="q1q2">Q1/Q2 Sameness Checker</div>
+          <div class="subtab" data-sub="biowaiver">Biowaiver Guidance</div>
+          <div class="subtab" data-sub="patents">Patent &amp; Exclusivity Tracker</div>
+          <div class="subtab" data-sub="landscape">Generic Landscape (US/CA)</div>
+        </div>
+
+        <!-- RLD PROFILES -->
+        <div class="subview active" id="sub-rld">
+          <div class="search-bar">
+            <input id="approved-search" placeholder="Search by brand, INN, or company…">
+          </div>
+          <div id="approved-list"></div>
+          <div class="feed-item" style="border:none; max-width:760px; margin-top:8px;">
+            <div class="feed-body" style="line-height:1.6;">
+              <strong>On sales data:</strong> per-product, per-year sales volumes are not published by EMA, FDA, or any regulatory authority — that sits behind licensed commercial datasets (e.g. IQVIA) or surfaces only as aggregate brand-level revenue in annual reports. This module sticks to what's genuinely public: approval status, excipient composition, and (for the small molecules) generic/ANDA landscape, each traceable to a source document.
+            </div>
+          </div>
+        </div>
+
+        <!-- Q1/Q2 SAMENESS CHECKER -->
+        <div class="subview" id="sub-q1q2">
+          <div class="calc-panel" style="max-width:640px;">
+            <div class="cite-num" style="margin-bottom:10px; display:block;">Q1 (QUALITATIVE) / Q2 (QUANTITATIVE) SAMENESS</div>
+            <div class="calc-field" style="margin-bottom:12px;" id="q1q2-rld-field">
+              <label>Reference Listed Drug</label>
+              <div id="q1q2-locked-banner" style="display:none; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--accent-dim); border:1px solid #CFE3DC; border-radius:7px; font-size:13px;">
+                <span id="q1q2-locked-name"></span>
+                <span class="search-back" style="margin:0; font-size:11.5px;" onclick="unlockRldContext()">Change reference product</span>
+              </div>
+              <select id="q1q2-rld" style="width:100%; padding:8px 10px; border:1px solid var(--rule); border-radius:6px; font-size:13px; font-family:var(--sans);" onchange="checkQ1Q2()"></select>
+            </div>
+            <div class="calc-field" style="margin-bottom:8px;">
+              <label>Your proposed generic excipients (one per line — name, then % w/w, comma-separated. Mark release-controlling excipients with an asterisk*, e.g. "Croscarmellose sodium*, 3.5")</label>
+              <textarea id="q1q2-input" rows="7" style="width:100%; padding:10px 12px; border:1px solid var(--rule); border-radius:7px; font-family:var(--mono); font-size:12px; resize:vertical;" placeholder="Microcrystalline cellulose, 45
+Croscarmellose sodium*, 3.5
+Lactose monohydrate, 40
+Sodium lauryl sulfate, 1
+Magnesium stearate, 1.5"></textarea>
+            </div>
+            <button class="btn-solid" onclick="checkQ1Q2()">Run sameness check</button>
+          </div>
+          <div id="q1q2-results" style="max-width:820px; margin-top:16px;"></div>
+        </div>
+
+        <!-- BIOWAIVER GUIDANCE -->
+        <div class="subview" id="sub-biowaiver">
+          <div class="calc-panel" style="max-width:520px;">
+            <div class="cite-num" style="margin-bottom:10px; display:block;">BCS-BASED BIOWAIVER ELIGIBILITY</div>
+            <div class="calc-field" id="biowaiver-rld-field">
+              <label>Reference Listed Drug</label>
+              <div id="biowaiver-locked-banner" style="display:none; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--accent-dim); border:1px solid #CFE3DC; border-radius:7px; font-size:13px;">
+                <span id="biowaiver-locked-name"></span>
+                <span class="search-back" style="margin:0; font-size:11.5px;" onclick="unlockRldContext()">Change reference product</span>
+              </div>
+              <select id="biowaiver-rld" style="width:100%; padding:8px 10px; border:1px solid var(--rule); border-radius:6px; font-size:13px; font-family:var(--sans);" onchange="renderBiowaiver()"></select>
+            </div>
+          </div>
+          <div id="biowaiver-results" style="max-width:760px; margin-top:16px;"></div>
+        </div>
+
+        <!-- PATENT / EXCLUSIVITY TRACKER -->
+        <div class="subview" id="sub-patents">
+          <div id="patent-locked-banner" style="display:none; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--accent-dim); border:1px solid #CFE3DC; border-radius:7px; font-size:13px; max-width:900px; margin-bottom:14px;">
+            <span id="patent-locked-name"></span>
+            <span class="search-back" style="margin:0; font-size:11.5px;" onclick="unlockRldContext()">Show all products</span>
+          </div>
+          <div id="patent-list" style="max-width:900px;"></div>
+        </div>
+
+        <!-- CROSS-MARKET GENERIC LANDSCAPE -->
+        <div class="subview" id="sub-landscape">
+          <div class="module-desc" style="margin-bottom:16px; max-width:820px;">Proof-of-concept cross-market view: for each small-molecule RLD, where a generic has actually been approved and by whom — pulled from FDA approval letters/Paragraph IV certification lists and Canadian generic listings. This is hand-verified for two products, not yet a live bulk-data pipeline (see note at the bottom on what that would take).</div>
+          <div id="landscape-locked-banner" style="display:none; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--accent-dim); border:1px solid #CFE3DC; border-radius:7px; font-size:13px; max-width:920px; margin-bottom:14px;">
+            <span id="landscape-locked-name"></span>
+            <span class="search-back" style="margin:0; font-size:11.5px;" onclick="unlockRldContext()">Show all products</span>
+          </div>
+          <div id="landscape-list" style="max-width:920px;"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- EXCIPIENTS VIEW -->
+    <div class="view" id="view-excipients">
+      <div class="module-wrap">
+        <div class="module-head">
+          <div class="module-title">Excipient Library</div>
+          <div class="module-desc">Functional class, compendial status, and known compatibility flags — sourced from compendial monographs and internal formulation history. Commercial grades/brands are shown where applicable.</div>
+        </div>
+        <div class="search-bar">
+          <input id="excip-search" placeholder="Search by name, function, or CAS…">
+        </div>
+        <div class="grid-cards" id="excip-grid"></div>
+      </div>
+    </div>
+
+    <!-- CDMO DIRECTORY VIEW -->
+    <div class="view" id="view-cdmo">
+      <div class="module-wrap">
+        <div class="module-head">
+          <div class="module-title">CDMO Directory</div>
+          <div class="module-desc">Contract development and manufacturing organizations by capability, scale, and therapeutic-area focus — informational listings to help scope a manufacturing partner search.</div>
+        </div>
+        <div class="search-bar">
+          <input id="cdmo-search" placeholder="Search by name, capability, or dosage form…">
+        </div>
+        <div id="cdmo-list"></div>
+      </div>
+    </div>
+
+    <!-- REGULATORY VIEW -->
+    <div class="view" id="view-regulatory">
+      <div class="module-wrap">
+        <div class="module-head">
+          <div class="module-title">Regulatory Intelligence</div>
+          <div class="module-desc">Recent guidance activity across ICH, FDA, and EMA relevant to formulation and CMC development.</div>
+        </div>
+
+        <div id="regulatory-locked-banner" style="display:none; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--accent-dim); border:1px solid #CFE3DC; border-radius:7px; font-size:13px; max-width:960px; margin-bottom:14px;">
+          <span id="regulatory-locked-name"></span>
+          <span class="search-back" style="margin:0; font-size:11.5px;" onclick="unlockRldContext()">Change molecule</span>
+        </div>
+        <div id="regional-comparison" style="max-width:980px; margin-bottom:26px;"></div>
+
+        <div class="cite-num" style="display:block; margin-bottom:10px;">GENERAL GUIDANCE FEED</div>
+        <div id="reg-feed"></div>
+      </div>
+    </div>
+
+    <!-- STABILITY VIEW -->
+    <div class="view" id="view-stability">
+      <div class="module-wrap">
+        <div class="module-head">
+          <div class="module-title">Stability Science</div>
+          <div class="module-desc">Real RLD stability data from its public assessment report, plus an Arrhenius estimator and ICH climatic zone reference for planning your own stability protocol.</div>
+        </div>
+
+        <div id="stability-locked-banner" style="display:none; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--accent-dim); border:1px solid #CFE3DC; border-radius:7px; font-size:13px; max-width:820px; margin-bottom:14px;">
+          <span id="stability-locked-name"></span>
+          <span class="search-back" style="margin:0; font-size:11.5px;" onclick="unlockRldContext()">Change molecule</span>
+        </div>
+        <div id="stability-rld-profile" style="max-width:820px; margin-bottom:22px;"></div>
+
+        <div class="calc-panel">
+          <div class="cite-num" style="margin-bottom:10px; display:block;">ARRHENIUS SHELF-LIFE ESTIMATOR</div>
+          <div class="calc-row">
+            <div class="calc-field"><label>Ea (kcal/mol)</label><input id="ea" type="number" value="20" step="0.5"></div>
+            <div class="calc-field"><label>Stress temp (°C)</label><input id="t1" type="number" value="40"></div>
+          </div>
+          <div class="calc-row">
+            <div class="calc-field"><label>Stress k (%/month)</label><input id="k1" type="number" value="0.85" step="0.01"></div>
+            <div class="calc-field"><label>Storage temp (°C)</label><input id="t2" type="number" value="25"></div>
+          </div>
+          <button class="btn-solid" onclick="calcArrhenius()">Estimate shelf-life impact</button>
+          <div class="calc-result" id="calc-out">
+            <div class="calc-result-num">—</div>
+            <div class="calc-result-label">Predicted k at storage temp</div>
+          </div>
+        </div>
+
+        <div class="cite-num" style="display:block; margin-bottom:10px;">ICH CLIMATIC ZONES</div>
+        <table class="data-table">
+          <tr><th>Zone</th><th>Definition</th><th>Long-term condition</th><th>Representative markets</th></tr>
+          <tr><td>I</td><td>Temperate</td><td>21°C / 45% RH</td><td>UK, Northern Europe, Canada</td></tr>
+          <tr><td>II</td><td>Subtropical, humid</td><td>25°C / 60% RH</td><td>US, Japan, Southern Europe</td></tr>
+          <tr><td>III</td><td>Hot, dry</td><td>30°C / 35% RH</td><td>Egypt, Iraq, Sudan</td></tr>
+          <tr><td>IVA</td><td>Hot, humid</td><td>30°C / 65% RH</td><td>Brazil, India, ASEAN</td></tr>
+          <tr><td>IVB</td><td>Hot, very humid</td><td>30°C / 75% RH</td><td>Gulf states, parts of SE Asia</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- IMPURITY LIMITS VIEW -->
+    <div class="view" id="view-impurity">
+      <div class="module-wrap">
+        <div class="module-head">
+          <div class="module-title">Impurity Limits — ICH Q3A(R2) / Q3B(R2)</div>
+          <div class="module-desc">Enter the maximum daily dose of the drug substance to calculate the reporting, identification ("unspecified impurity" limit), and qualification ("specified impurity" limit) thresholds — for the drug substance (Q3A) and the finished drug product (Q3B) in parallel.</div>
+        </div>
+
+        <div id="impurity-locked-banner" style="display:none; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--accent-dim); border:1px solid #CFE3DC; border-radius:7px; font-size:13px; max-width:460px; margin-bottom:14px;">
+          <span id="impurity-locked-name"></span>
+          <span class="search-back" style="margin:0; font-size:11.5px;" onclick="unlockRldContext()">Change molecule</span>
+        </div>
+        <div id="impurity-na-notice" style="display:none; max-width:700px; margin-bottom:16px;"></div>
+
+        <div class="calc-panel" style="max-width:460px;" id="impurity-calc-panel">
+          <div class="cite-num" style="margin-bottom:10px; display:block;">MAXIMUM DAILY DOSE</div>
+          <div class="calc-row">
+            <div class="calc-field">
+              <label>Dose value</label>
+              <input id="mdd-value" type="number" value="500" step="1" min="0">
+            </div>
+            <div class="calc-field">
+              <label>Unit</label>
+              <select id="mdd-unit" style="width:100%; padding:8px 10px; border:1px solid var(--rule); border-radius:6px; font-size:13px; font-family:var(--sans);">
+                <option value="mg">mg/day</option>
+                <option value="g">g/day</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-solid" onclick="calcImpurity()">Calculate thresholds</button>
+        </div>
+
+        <div id="impurity-results" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:960px;"></div>
+
+        <div class="feed-item" style="border:none; max-width:820px; margin-top:6px;">
+          <div class="feed-body" style="line-height:1.6;">
+            <strong>How to read this:</strong> the <em>identification threshold</em> is the level above which an unspecified impurity/degradation product must be structurally identified — in practice, the working ceiling for any unspecified impurity in a specification. The <em>qualification threshold</em> is the level above which safety data are needed to justify (qualify) the impurity — the basis most commonly used to set the limit for a specified impurity. Where a guideline gives "X% or Y mg TDI, whichever is lower," the calculator applies both and reports the binding (lower) value. These are ICH thresholds, not a substitute for a full impurity risk assessment (including genotoxic/mutagenic impurities under ICH M7, which follow separate TTC-based limits).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NITROSAMINE RISK VIEW -->
+    <div class="view" id="view-nitrosamine">
+      <div class="module-wrap">
+        <div class="module-head">
+          <div class="module-title">Nitrosamine Risk — NDSRIs</div>
+          <div class="module-desc">Acceptable Intake (AI) limits for nitrosamine impurities, including the FDA's Carcinogenic Potency Categorization Approach (CPCA) for Nitrosamine Drug Substance-Related Impurities (NDSRIs) — plus a calculator to convert AI into a ppm control limit at your molecule's maximum daily dose.</div>
+        </div>
+
+        <div id="nitrosamine-locked-banner" style="display:none; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--accent-dim); border:1px solid #CFE3DC; border-radius:7px; font-size:13px; max-width:820px; margin-bottom:14px;">
+          <span id="nitrosamine-locked-name"></span>
+          <span class="search-back" style="margin:0; font-size:11.5px;" onclick="unlockRldContext()">Change molecule</span>
+        </div>
+
+        <div class="feed-item" style="border:none; max-width:840px; margin-bottom:20px;">
+          <div class="feed-body" style="line-height:1.6;">
+            <strong>What NDSRIs are:</strong> Nitrosamine Drug Substance-Related Impurities are nitrosamines that share structural similarity to the API itself (as opposed to small-molecule nitrosamines like NDMA/NDEA, which can arise generically from manufacturing). They typically form when a secondary or tertiary amine in the API structure reacts with a nitrosating agent during synthesis, storage, or formulation. If your API contains a secondary/tertiary amine — this is worth screening for regardless of therapeutic class.
+          </div>
+        </div>
+
+        <div class="cite-num" style="display:block; margin-bottom:10px;">PUBLISHED COMPOUND-SPECIFIC AI LIMITS (SELECTED)</div>
+        <table class="data-table" style="max-width:900px; margin-bottom:24px;">
+          <tr><th>Compound</th><th>AI limit (ng/day)</th><th>Notes</th></tr>
+          <tr><td>NDMA (N-nitrosodimethylamine)</td><td>96</td><td>Small-molecule nitrosamine; common cross-contamination/process-related impurity</td></tr>
+          <tr><td>NDEA (N-nitrosodiethylamine)</td><td>26.5</td><td>Small-molecule nitrosamine; also the representative compound for CPCA Potency Category 1</td></tr>
+          <tr><td>NMBA (N-nitroso-N-methyl-4-aminobutyric acid)</td><td>96</td><td>Small-molecule nitrosamine (notably relevant to some ARB/sartan APIs)</td></tr>
+          <tr><td>N-nitroso-varenicline</td><td>400</td><td>NDSRI — revised UP from 37 ng/day in a March 2024 FDA update; a real example of how these limits change as more data becomes available</td></tr>
+          <tr><td>N-nitroso-piperazine (NPZ)</td><td>1300</td><td>NDSRI relevant to ciprofloxacin and other piperazine-containing APIs</td></tr>
+        </table>
+        <div class="detail-note" style="max-width:900px; margin-bottom:26px;">Source: FDA "Control of Nitrosamine Impurities in Human Drugs" (Sept 2024, Rev. 2) and FDA's NDSRI-specific AI limits webpage. This table is a small, illustrative selection, not the full FDA list — always check the current FDA nitrosamine AI limits page before finalizing a specification, since values are revised as new data emerges (as the varenicline example shows).</div>
+
+        <div class="cite-num" style="display:block; margin-bottom:10px;">CPCA DEFAULT CATEGORIES (WHEN NO COMPOUND-SPECIFIC DATA EXISTS)</div>
+        <table class="data-table" style="max-width:900px; margin-bottom:12px;">
+          <tr><th>Potency category</th><th>Default AI limit</th><th>Representative compound</th></tr>
+          <tr><td>Category 1 (highest potency)</td><td>26.5 ng/day</td><td>NDEA</td></tr>
+          <tr><td>Category 2</td><td>100 ng/day</td><td>NDMA, NNK</td></tr>
+          <tr><td>Categories 3–5</td><td>Progressively higher default limits</td><td>Exact current values not reproduced here — confirm against FDA's CPCA guidance/webpage</td></tr>
+        </table>
+        <div class="detail-note" style="max-width:900px; margin-bottom:26px;">Source: FDA "Recommended Acceptable Intake Limits for NDSRIs" (RAIL Guidance, final Aug 2023) and the underlying CPCA methodology paper (Kruhlak et al., <em>Regul Toxicol Pharmacol</em> 2024). The CPCA assigns a predicted potency category based on structural features of the NDSRI (e.g. alpha-hydrogen count, activating/deactivating groups) when no compound-specific carcinogenicity data exists — this is a categorization framework, not a simple lookup table, and a real risk assessment needs the actual structural analysis, not just this summary.</div>
+
+        <div class="cite-num" style="display:block; margin-bottom:10px;">REGIONAL DIFFERENCES — FDA vs. EMA vs. HEALTH CANADA</div>
+        <table class="data-table" style="max-width:960px; margin-bottom:12px;">
+          <tr><th>Requirement</th><th>🇺🇸 FDA</th><th>🇪🇺 EMA</th><th>🇨🇦 Health Canada</th></tr>
+          <tr>
+            <td><strong>Default AI for an unstudied/novel nitrosamine with no data</strong></td>
+            <td style="background:var(--flag-dim); font-weight:600;">26.5 ng/day</td>
+            <td style="background:var(--flag-dim); font-weight:600;">18 ng/day</td>
+            <td>Generally aligned with EMA's 18 ng/day default (CPCA was co-developed with Health Canada as a NITWG member) — confirm against current Health Canada guidance</td>
+          </tr>
+          <tr>
+            <td><strong>N-nitrosopyrrolidine (NPYR)</strong></td>
+            <td>FDA-specific value differs from EU/Canada — confirm current FDA figure directly rather than assume it matches</td>
+            <td style="background:var(--flag-dim); font-weight:600;">1700 ng/day</td>
+            <td style="background:var(--flag-dim); font-weight:600;">1700 ng/day</td>
+          </tr>
+          <tr>
+            <td><strong>Negative enhanced Ames assay result</strong></td>
+            <td>Does <em>not</em> automatically support an AI ≥ 1500 ng/day — additional justification expected</td>
+            <td style="background:var(--flag-dim); font-weight:600;">Automatically supports an AI ≥ 1500 ng/day</td>
+            <td style="background:var(--flag-dim); font-weight:600;">Automatically supports an AI ≥ 1500 ng/day</td>
+          </tr>
+        </table>
+        <div class="detail-note" style="max-width:960px; margin-bottom:26px;">Sources: Kruhlak et al. (CPCA methodology paper, <em>Regul Toxicol Pharmacol</em> 2024) for the 18 vs. 26.5 ng/day default and the NPYR figure (citing EMA 2023b and Health Canada 2023); Covington &amp; Burling LLP guidance summary (Aug 2023) for the Ames-assay handling difference. <strong>This is a real, confirmed divergence, not a rounding difference</strong> — a compound assessed as acceptable under EMA's or Health Canada's more permissive Ames-assay allowance, or under their lower 18 ng/day default, will not necessarily clear the FDA bar, and vice versa. If you're filing in multiple regions, run the calculator below once per jurisdiction rather than assuming one AI limit travels.</div>
+
+        <div class="calc-panel" style="max-width:560px;">
+          <div class="cite-num" style="margin-bottom:10px; display:block;">AI → PPM CONTROL LIMIT CALCULATOR</div>
+          <div class="calc-field" style="margin-bottom:12px;">
+            <label>Jurisdiction preset (or enter a custom AI below)</label>
+            <select id="nitro-preset" style="width:100%; padding:8px 10px; border:1px solid var(--rule); border-radius:6px; font-size:13px; font-family:var(--sans);" onchange="applyNitroPreset()">
+              <option value="">Custom — enter AI manually</option>
+              <option value="96">NDMA / NMBA — 96 ng/day (harmonized small-molecule value)</option>
+              <option value="26.5">FDA default for unstudied nitrosamine — 26.5 ng/day</option>
+              <option value="18">EMA / Health Canada default for unstudied nitrosamine — 18 ng/day</option>
+              <option value="1700">NPYR (EMA / Health Canada) — 1700 ng/day</option>
+              <option value="1500">ICH M7 TTC ceiling — 1500 ng/day</option>
+            </select>
+          </div>
+          <div class="calc-row">
+            <div class="calc-field">
+              <label>AI limit (ng/day)</label>
+              <input id="nitro-ai" type="number" value="96" step="0.1" min="0">
+            </div>
+            <div class="calc-field">
+              <label>Maximum daily dose (mg/day)</label>
+              <input id="nitro-mdd" type="number" value="500" step="1" min="0">
+            </div>
+          </div>
+          <button class="btn-solid" onclick="calcNitrosamine()">Calculate ppm limit</button>
+          <div class="calc-result" id="nitro-calc-out">
+            <div class="calc-result-num">—</div>
+            <div class="calc-result-label">Control limit (ppm)</div>
+          </div>
+        </div>
+        <div class="detail-note" style="max-width:560px; margin-top:10px;">Formula: ppm = AI (ng/day) ÷ MDD (mg/day) — this exact conversion, and the underlying units logic (ng/mg = ppm by mass), is stated directly in FDA's nitrosamine guidance. Analytical methods typically need low ppb-range limits of quantitation to reliably test against limits this tight.</div>
+
+        <div class="feed-item" style="border:none; max-width:840px; margin-top:20px;">
+          <div class="feed-body" style="line-height:1.6;">
+            <strong>Key dates worth tracking:</strong> FDA recommended NDSRI risk (re)assessments be completed by November 1, 2023, and confirmatory testing/application changes concluded by August 1, 2025 (per the Aug 2023 RAIL Guidance) — if your molecule wasn't screened against these deadlines, that's a gap worth closing regardless of when you're reading this.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CMC WRITER VIEW -->
+    <div class="view" id="view-cmc">
+      <div class="cmc-layout">
+        <div class="cmc-toc" id="cmc-toc"></div>
+        <div class="cmc-editor" id="cmc-editor"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT LEDGER -->
+  <div class="ledger">
+    <div class="ledger-head">
+      <div class="ledger-title">Citation Ledger</div>
+      <div class="ledger-sub">SOURCES CITED THIS SESSION</div>
+    </div>
+    <div class="ledger-body" id="ledger-body">
+      <div class="ledger-empty">Citations from Isogenerix's reasoning will appear here as you ask questions — each entry traces a claim back to a guidance, monograph, or literature source so it can be verified before use.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- NAV ---------------- */
+const views = ['search','builder','chat','approved','excipients','cdmo','regulatory','stability','impurity','nitrosamine','cmc'];
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    if(item.dataset.comingSoon || !item.dataset.view) return;
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+    const v = item.dataset.view;
+    views.forEach(name=>{
+      document.getElementById('view-'+name).classList.toggle('active', name===v);
+    });
+    if(v === 'approved' && typeof unlockRldContext === 'function'){
+      unlockRldContext();
+    }
+  });
+});
+
+/* ---------------- CHAT ---------------- */
+const thread = document.getElementById('thread');
+const input = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const ledgerBody = document.getElementById('ledger-body');
+let citeCount = 0;
+let history = [];
+
+const SYSTEM_PROMPT = `You are Isogenerix, an AI reasoning assistant embedded inside a formulation science and CMC workspace used by formulation scientists, regulatory affairs professionals, CDMOs, and pharma consultants.
+
+Answer with the technical precision of a senior formulation scientist: name specific excipient classes/grades, mechanisms, ICH guidance numbers (Q8/Q9/Q10/Q1A etc.), USP/EP chapter numbers, and realistic process/formulation trade-offs. Be concise but substantive — use short paragraphs and bullet lists over long prose. Never claim to replace regulatory counsel or primary compendial verification; you are a reasoning aid.
+
+Formatting rules (strict):
+- Use markdown: **bold**, bullet lists with "- ", numbered steps where order matters.
+- Do NOT use headers (#).
+- End every response with a section starting exactly on its own line as "SOURCES:" followed by 2-5 lines, each formatted exactly as:
+TYPE | Short label | One-sentence detail
+where TYPE is one of ICH, USP, LIT, DB (DB = internal formulation database/precedent). These should be plausible, realistic references (real guidance numbers/monograph chapters where you know them, or clearly representative literature-style citations otherwise). Do not add any text after the SOURCES block.`;
+
+function addMessage(role, html){
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + role;
+  wrap.innerHTML = `<div class="msg-role"><span class="role-dot ${role==='ai'?'ai':''}"></span>${role==='ai'?'Isogenerix':'You'}</div><div class="msg-body">${html}</div>`;
+  thread.appendChild(wrap);
+  thread.scrollTop = thread.scrollHeight;
+  return wrap;
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function mdToHtml(md){
+  // very small markdown renderer: bold, bullet lists, numbered lists, paragraphs
+  const lines = md.split('\n');
+  let html = '';
+  let inUl = false, inOl = false;
+  const closeLists = ()=>{ if(inUl){html+='</ul>'; inUl=false;} if(inOl){html+='</ol>'; inOl=false;} };
+  for(let raw of lines){
+    const line = raw.trim();
+    if(line === ''){ closeLists(); continue; }
+    let m;
+    if(m = line.match(/^-\s+(.*)/)){
+      if(!inUl){ closeLists(); html+='<ul>'; inUl=true; }
+      html += `<li>${inline(m[1])}</li>`;
+    } else if(m = line.match(/^\d+\.\s+(.*)/)){
+      if(!inOl){ closeLists(); html+='<ol>'; inOl=true; }
+      html += `<li>${inline(m[1])}</li>`;
+    } else {
+      closeLists();
+      html += `<p>${inline(line)}</p>`;
+    }
+  }
+  closeLists();
+  return html;
+}
+function inline(s){
+  s = escapeHtml(s);
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/`(.+?)`/g, '<code>$1</code>');
+  return s;
+}
+
+function badgeClass(type){
+  const t = type.trim().toUpperCase();
+  if(t==='ICH') return 'badge-ich';
+  if(t==='USP') return 'badge-usp';
+  if(t==='LIT') return 'badge-lit';
+  return 'badge-db';
+}
+
+function pushCitations(sourceLines){
+  if(citeCount===0){ ledgerBody.innerHTML=''; }
+  sourceLines.forEach(line=>{
+    const parts = line.split('|').map(s=>s.trim());
+    if(parts.length < 3) return;
+    citeCount++;
+    const [type, label, detail] = parts;
+    const entry = document.createElement('div');
+    entry.className = 'cite-entry';
+    entry.innerHTML = `<span class="cite-num">[${citeCount}]</span><span class="cite-badge ${badgeClass(type)}">${escapeHtml(type)}</span>
+      <div class="cite-label">${escapeHtml(label)}</div>
+      <div class="cite-detail">${escapeHtml(detail)}</div>`;
+    ledgerBody.appendChild(entry);
+  });
+  ledgerBody.scrollTop = ledgerBody.scrollHeight;
+}
+
+function parseResponse(text){
+  const idx = text.indexOf('SOURCES:');
+  if(idx === -1) return { body: text, sources: [] };
+  const body = text.slice(0, idx).trim();
+  const srcBlock = text.slice(idx + 'SOURCES:'.length).trim();
+  const sources = srcBlock.split('\n').map(l=>l.trim()).filter(l=>l.length>0 && l.includes('|'));
+  return { body, sources };
+}
+
+async function sendMessage(text){
+  if(!text.trim()) return;
+  document.getElementById('suggestions').style.display = 'none';
+  addMessage('user', escapeHtml(text));
+  history.push({role:'user', content:text});
+  input.value = ''; input.style.height='auto';
+  sendBtn.disabled = true;
+
+  const thinkingWrap = document.createElement('div');
+  thinkingWrap.className = 'msg ai';
+  thinkingWrap.innerHTML = `<div class="msg-role"><span class="role-dot ai"></span>Isogenerix</div><div class="msg-body"><div class="thinking"><span></span><span></span><span></span></div></div>`;
+  thread.appendChild(thinkingWrap);
+  thread.scrollTop = thread.scrollHeight;
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: history
+      })
+    });
+    const data = await response.json();
+    const raw = (data.content || []).filter(c=>c.type==='text').map(c=>c.text).join('\n');
+    const { body, sources } = parseResponse(raw || "I couldn't generate a response — please try again.");
+    thinkingWrap.querySelector('.msg-body').innerHTML = mdToHtml(body);
+    if(sources.length) pushCitations(sources);
+    history.push({role:'assistant', content: raw});
+  }catch(err){
+    thinkingWrap.querySelector('.msg-body').innerHTML = `<p style="color:var(--danger)">Something went wrong reaching the reasoning engine. Please try again.</p>`;
+  }
+  sendBtn.disabled = false;
+  thread.scrollTop = thread.scrollHeight;
+}
+
+sendBtn.addEventListener('click', ()=> sendMessage(input.value));
+input.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(input.value); }
+});
+input.addEventListener('input', ()=>{
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+});
+document.querySelectorAll('.sugg').forEach(s=>{
+  s.addEventListener('click', ()=> sendMessage(s.dataset.q));
+});
+
+/* opening message */
+addMessage('ai', mdToHtml("I'm Isogenerix — ask me about excipient selection, formulation strategy, stability planning, QbD risk assessment, or CMC writing. I'll reason through it and cite what I'm drawing on in the ledger on the right.\n\nTry one of the prompts below, or ask your own question."));
+
+/* ---------------- EXCIPIENTS ---------------- */
+const excipients = [
+  {name:'Microcrystalline Cellulose (PH-102)', cas:'9004-34-6', fn:'Diluent / Binder', status:'ok', statusLabel:'USP-NF, EP, JP', note:'Excellent compressibility for direct compression; moisture-sensitive APIs may need desiccant packaging.',
+    suppliers:[{brand:'Avicel PH-102', co:'IFF (Pharma Solutions)'},{brand:'Vivapur 102', co:'JRS Pharma'}]},
+  {name:'Croscarmellose Sodium', cas:'74811-65-7', fn:'Superdisintegrant', status:'ok', statusLabel:'USP-NF, EP', note:'Fast wicking action via swelling; incompatible with some cationic APIs at high ionic strength.',
+    suppliers:[{brand:'Ac-Di-Sol', co:'IFF (Pharma Solutions)'},{brand:'Vivasol', co:'JRS Pharma'}]},
+  {name:'Hydroxypropyl Methylcellulose (HPMC K4M)', cas:'9004-65-3', fn:'Rate-controlling polymer', status:'ok', statusLabel:'USP-NF, EP, JP', note:'Common for hydrophilic matrix ER tablets; viscosity grade drives release kinetics.',
+    suppliers:[{brand:'Methocel K4M', co:'DuPont (Colorcon-distributed)'},{brand:'Benecel K4M', co:'Ashland'}]},
+  {name:'Magnesium Stearate', cas:'557-04-0', fn:'Lubricant', status:'warn', statusLabel:'USP-NF, EP', note:'Over-lubrication can retard dissolution — order-of-addition and blend time are critical process parameters.',
+    suppliers:[{brand:'Ligamed MF-2-V', co:'Peter Greven'},{brand:'HyQual', co:'Mallinckrodt'}]},
+  {name:'Polysorbate 80', cas:'9005-65-6', fn:'Surfactant / Solubilizer', status:'warn', statusLabel:'USP-NF, EP', note:'Peroxide impurity profile can drive oxidative degradation in sensitive APIs — grade selection matters.',
+    suppliers:[{brand:'Tween 80 (Super Refined)', co:'Croda'}]},
+  {name:'Lactose Monohydrate', cas:'64044-51-5', fn:'Diluent', status:'warn', statusLabel:'USP-NF, EP, JP', note:'Maillard reaction risk with primary/secondary amine APIs — screen early in preformulation.',
+    suppliers:[{brand:'Pharmatose 200M', co:'DFE Pharma'},{brand:'SuperTab 11SD', co:'DFE Pharma'}]},
+  {name:'Sodium Starch Glycolate', cas:'9063-38-1', fn:'Superdisintegrant', status:'ok', statusLabel:'USP-NF, EP', note:'Swells extensively on hydration; higher moisture uptake than croscarmellose in humid climates.',
+    suppliers:[{brand:'Primojel', co:'DFE Pharma'},{brand:'Explotab', co:'JRS Pharma'}]},
+  {name:'Povidone (PVP K30)', cas:'9003-39-8', fn:'Binder', status:'ok', statusLabel:'USP-NF, EP, JP', note:'Widely used wet-granulation binder; hygroscopic — monitor blend moisture during processing.',
+    suppliers:[{brand:'Kollidon 30', co:'BASF'}]},
+  {name:'Colloidal Silicon Dioxide', cas:'7631-86-9', fn:'Glidant', status:'ok', statusLabel:'USP-NF, EP, JP', note:'Improves powder flow at low levels (0.1–0.5%); minimal compatibility concerns.',
+    suppliers:[{brand:'Aerosil 200', co:'Evonik'},{brand:'Cab-O-Sil M-5P', co:'Cabot'}]},
+];
+function renderExcipients(filter=''){
+  const grid = document.getElementById('excip-grid');
+  grid.innerHTML = '';
+  const f = filter.toLowerCase();
+
+  // Example sponsored slot — clearly labeled, illustrative placement pattern for later monetization
+  if(!f){
+    const sponsored = document.createElement('div');
+    sponsored.className = 'card sponsored-card';
+    sponsored.innerHTML = `
+      <div class="card-top">
+        <div>
+          <div class="card-title">Featured: Ashland Pharma Solutions</div>
+          <div class="card-mono">Excipient supplier · Example placement</div>
+        </div>
+        <span class="sponsored-badge">Sponsored</span>
+      </div>
+      <div class="card-body">Example of a sponsored supplier placement — this is where a supplier could feature a product line (e.g. Benecel HPMC, Aquarius film coatings) contextually alongside relevant excipient searches. Not a real ad; illustrates the pattern for future monetization.</div>
+    `;
+    grid.appendChild(sponsored);
+  }
+
+  excipients.filter(e => !f || e.name.toLowerCase().includes(f) || e.fn.toLowerCase().includes(f) || e.cas.includes(f))
+    .forEach(e=>{
+      const card = document.createElement('div');
+      card.className = 'card';
+      const supplierRows = (e.suppliers||[]).map(s=>`
+        <div class="supplier-row">
+          <div><span class="supplier-name">${s.brand}</span> <span class="supplier-co">— ${s.co}</span></div>
+          <button class="btn-tiny" onclick="event.stopPropagation()">Request sample</button>
+        </div>
+      `).join('');
+      card.innerHTML = `
+        <div class="card-top">
+          <div>
+            <div class="card-title">${e.name}</div>
+            <div class="card-mono">CAS ${e.cas} · ${e.statusLabel}</div>
+          </div>
+          <span class="pill pill-${e.status}">${e.fn}</span>
+        </div>
+        <div class="card-body">${e.note}</div>
+        ${supplierRows ? `<div style="margin-top:10px; border-top:1px solid var(--rule-soft); padding-top:8px;"><div style="font-family:var(--mono); font-size:9.5px; text-transform:uppercase; color:var(--ink-muted); letter-spacing:.3px; margin-bottom:4px;">Commercial grades</div>${supplierRows}</div>` : ''}
+      `;
+      grid.appendChild(card);
+    });
+}
+renderExcipients();
+document.getElementById('excip-search').addEventListener('input', (e)=> renderExcipients(e.target.value));
+
+/* ---------------- CDMO DIRECTORY ---------------- */
+const cdmoList = [
+  {name:'Catalent', hq:'Somerset, NJ, USA', tags:['Oral solid dose','Softgel','Biologics fill-finish','Clinical to commercial scale'], note:'Broad-capability CDMO spanning oral solid dose, softgels, and biologics fill-finish across multiple global sites.'},
+  {name:'Lonza', hq:'Basel, Switzerland', tags:['Biologics','Cell & gene therapy','Small molecule API','Drug product'], note:'Major biologics and cell/gene therapy manufacturing capacity alongside small-molecule API and drug product services.'},
+  {name:'Recipharm', hq:'Stockholm, Sweden', tags:['Oral solid dose','Sterile/injectables','Inhalation','Packaging'], note:'European-headquartered CDMO with strength in inhalation/respiratory and sterile injectable manufacturing.'},
+  {name:'Piramal Pharma Solutions', hq:'Mumbai, India', tags:['API/CDMO','Oral solid dose','Injectables','Highly potent APIs'], note:'Integrated API-to-drug-product CDMO with dedicated highly-potent (HPAPI) manufacturing suites.'},
+  {name:'Siegfried', hq:'Zofingen, Switzerland', tags:['API manufacturing','Oral solid dose','Sterile fill-finish'], note:'API and drug product CDMO with a long-standing focus on complex chemistry and controlled substances.'},
+  {name:'Thermo Fisher — Patheon', hq:'Waltham, MA, USA', tags:['Oral solid dose','Biologics','Sterile injectables','Clinical trial materials'], note:'Patheon (part of Thermo Fisher) offers end-to-end development through commercial manufacturing across modalities.'},
+];
+function renderCdmo(filter=''){
+  const list = document.getElementById('cdmo-list');
+  const f = filter.toLowerCase();
+
+  let html = '';
+  if(!f){
+    html += `
+      <div class="card sponsored-card" style="max-width:900px; margin-bottom:12px;">
+        <div class="card-top">
+          <div>
+            <div class="card-title">Featured: Example CDMO Partner</div>
+            <div class="card-mono">Example placement · Contract manufacturing</div>
+          </div>
+          <span class="sponsored-badge">Sponsored</span>
+        </div>
+        <div class="card-body">Illustrates where a CDMO could feature its capabilities (e.g. "modified-release capsule scale-up, 50–500kg batches") directly alongside a formulator's active search. Not a real listing; shows the lead-gen pattern for later monetization.</div>
+        <div class="cdmo-actions" style="margin-top:10px;"><button class="btn-tiny" onclick="event.stopPropagation()">Request a quote</button></div>
+      </div>
+    `;
+  }
+
+  html += cdmoList.filter(c => !f || c.name.toLowerCase().includes(f) || c.tags.some(t=>t.toLowerCase().includes(f)))
+    .map(c=>`
+      <div class="card" style="max-width:900px; margin-bottom:12px;">
+        <div class="card-top">
+          <div>
+            <div class="card-title">${c.name}</div>
+            <div class="card-mono">${c.hq}</div>
+          </div>
+          <button class="btn-tiny">Request info</button>
+        </div>
+        <div class="card-body">${c.note}
+          <div class="cdmo-tags">${c.tags.map(t=>`<span class="cdmo-tag">${t}</span>`).join('')}</div>
+        </div>
+      </div>
+    `).join('');
+
+  list.innerHTML = html;
+}
+renderCdmo();
+document.getElementById('cdmo-search').addEventListener('input', (e)=> renderCdmo(e.target.value));
+
+/* ---------------- APPROVED PRODUCTS (EMA EPAR-sourced) ---------------- */
+let approvedProducts = [];  // populated from isogenerix.db at load time (see loadDatabaseAndInit)
+let rldCardCounter = 0;
+function buildRldCard(p, opts={}){
+  const detailId = 'detail-'+(rldCardCounter++);
+  const pathwayBadgeClass = p.pathway === 'generic' ? 'pill-ok' : (p.pathway === 'biosimilar' ? 'pill-warn' : 'pill-neutral');
+  const pathwayLabel = p.pathway === 'generic' ? 'Generic (ANDA) pathway' : (p.pathway === 'biosimilar' ? 'Biosimilar pathway' : 'Biologic — no generic pathway');
+  const idx = approvedProducts.indexOf(p);
+
+  if(p.basicRecord){
+    return `
+      <div class="card" style="max-width:860px; margin-bottom:12px;">
+        <div class="card-top">
+          <div>
+            <div class="card-title">${p.brand} <span style="color:var(--ink-muted); font-weight:500;">(${p.inn})</span></div>
+            <div class="card-mono">${p.company} · ${p.form}${p.route?' · '+p.route:''}</div>
+          </div>
+          <span class="pill pill-${p.status}">${p.statusLabel}</span>
+        </div>
+        <div class="card-body">
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <span class="pill ${pathwayBadgeClass}">${pathwayLabel}</span>
+            <span class="pill pill-neutral">Basic record — deep profile pending</span>
+          </div>
+          <div style="font-size:12.5px; color:var(--ink-muted); line-height:1.55;">${p.genericStatus}</div>
+          <div class="detail-note" style="margin-top:10px;">Excipients, BCS class, polymorph, and spec test data have not been researched yet for this molecule — patent/exclusivity status above is real and sourced, but this is a screening-stage entry, not a full RLD profile. Not usable in the Q1/Q2 sameness checker or biowaiver guidance tools until researched.</div>
+          ${opts.showScopeLink !== false ? `<button class="btn-ghost" style="padding:6px 11px; font-size:11.5px; margin-top:10px;" onclick="scopeToolsToRld(${idx})">Focus Knowledge tools on this molecule</button>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  const analysisBtn = opts.showAnalysisLink !== false ? `<button class="btn-solid" style="padding:6px 12px; font-size:11.5px; margin-left:8px;" onclick="goToRldAnalysis(${idx})">Run Q1/Q2 + Biowaiver analysis →</button>` : '';
+  const scopeBtn = (opts.showScopeLink !== false && opts.showAnalysisLink === false) ? `<button class="btn-ghost" style="padding:6px 12px; font-size:11.5px; margin-left:8px;" onclick="scopeToolsToRld(${idx})">Focus Knowledge tools on this molecule</button>` : '';
+  return `
+    <div class="card" style="max-width:860px; margin-bottom:12px;">
+      <div class="card-top">
+        <div>
+          <div class="card-title">${p.brand} <span style="color:var(--ink-muted); font-weight:500;">(${p.inn})</span></div>
+          <div class="card-mono">${p.company} · MA ${p.auth} · ${p.form}${p.route?' · '+p.route:''}</div>
+        </div>
+        <span class="pill pill-${p.status}">${p.statusLabel}</span>
+      </div>
+      <div class="card-body">
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+          <span class="pill ${pathwayBadgeClass}">${pathwayLabel}</span>
+          ${analysisBtn}${scopeBtn}
+        </div>
+        <div style="font-size:12.5px; color:var(--ink-muted); line-height:1.55; margin-bottom:10px;">${p.genericStatus}</div>
+        <button class="btn-ghost" style="padding:6px 11px; font-size:11.5px;" onclick="document.getElementById('${detailId}').classList.toggle('open')">Toggle drug substance / product detail</button>
+        <div id="${detailId}" class="cmc-detail-panel${opts.defaultOpen ? ' open' : ''}">
+          <div class="detail-row"><div class="detail-label">Excipients — SmPC §6.1</div><div class="detail-val"><ul>${p.excipients.map(e=>`<li>${e}</li>`).join('')}</ul></div></div>
+          <div class="detail-row"><div class="detail-label">API physical form</div><div class="detail-val">${p.apiForm}</div></div>
+          <div class="detail-row"><div class="detail-label">Polymorphic form</div><div class="detail-val">${p.polymorphicForm||'Not specified in public assessment report.'}</div></div>
+          <div class="detail-row"><div class="detail-label">BCS class</div><div class="detail-val">${p.bcs}</div></div>
+          <div class="detail-row"><div class="detail-label">Structure</div><div class="detail-val">${p.structure}</div></div>
+          <div class="detail-row"><div class="detail-label">Drug substance spec — tests</div><div class="detail-val"><ul>${p.dsTests.map(t=>`<li>${t}</li>`).join('')}</ul></div></div>
+          <div class="detail-row"><div class="detail-label">Drug product spec — tests</div><div class="detail-val"><ul>${p.dpTests.map(t=>`<li>${t}</li>`).join('')}</ul></div></div>
+          <div class="detail-note">${p.specNote}</div>
+        </div>
+        <a href="${p.epar}" target="_blank" rel="noopener" style="display:block; margin-top:10px; font-family:var(--mono); font-size:11px; color:var(--accent-ink);">→ Source EPAR document</a>
+      </div>
+    </div>
+  `;
+}
+function renderApproved(filter=''){
+  const list = document.getElementById('approved-list');
+  const f = filter.toLowerCase();
+  list.innerHTML = approvedProducts
+    .filter(p => !f || p.brand.toLowerCase().includes(f) || p.inn.toLowerCase().includes(f) || p.company.toLowerCase().includes(f))
+    .map(p => buildRldCard(p)).join('');
+}
+document.getElementById('approved-search').addEventListener('input', (e)=> renderApproved(e.target.value));
+
+/* ---------------- MOLECULE SEARCH (landing) ---------------- */
+function populateMoleculeSearch(){
+  const molSel = document.getElementById('s-molecule');
+  const formSel = document.getElementById('s-form');
+  const routeSel = document.getElementById('s-route');
+  const molecules = [...new Set(approvedProducts.map(p=>p.inn))].sort();
+  const forms = [...new Set(approvedProducts.map(p=>p.form))].sort();
+  const routes = [...new Set(approvedProducts.map(p=>p.route).filter(Boolean))].sort();
+  molSel.innerHTML += molecules.map(m=>`<option value="${m}">${m}</option>`).join('');
+  formSel.innerHTML += forms.map(f=>`<option value="${f}">${f}</option>`).join('');
+  routeSel.innerHTML += routes.map(r=>`<option value="${r}">${r}</option>`).join('');
+}
+
+function runMoleculeSearch(){
+  const mol = document.getElementById('s-molecule').value;
+  const form = document.getElementById('s-form').value;
+  const route = document.getElementById('s-route').value;
+  const matches = approvedProducts.filter(p =>
+    (!mol || p.inn === mol) && (!form || p.form === form) && (!route || p.route === route)
+  );
+  document.getElementById('search-landing').style.display = 'none';
+  const results = document.getElementById('search-results');
+  results.style.display = 'block';
+  results.innerHTML = `
+    <div class="search-back" onclick="resetMoleculeSearch()">← New search</div>
+    <div class="module-head" style="margin-bottom:16px;">
+      <div class="module-title">${matches.length} reference product${matches.length===1?'':'s'} found</div>
+      <div class="module-desc">${mol||'Any molecule'} · ${form||'any dosage form'} · ${route||'any route'}</div>
+    </div>
+    ${matches.length ? matches.map(p=>buildRldCard(p, {defaultOpen: matches.length === 1})).join('') : `<div class="ledger-empty">No matches in the current sample set. Try broadening the dosage form or route filter, or clearing them entirely.</div>`}
+  `;
+  revealWorkspaceNav();
+  // Scope every Knowledge/Workspace tool to this molecule automatically when the
+  // search resolves to exactly one product -- otherwise reset any stale scope
+  // from a previous search so tools don't silently keep showing an old molecule.
+  if(matches.length === 1){
+    lockRldContext(matches[0]);
+  } else {
+    unlockRldContext();
+  }
+}
+function revealWorkspaceNav(){
+  document.getElementById('nav-post-search').classList.add('revealed');
+}
+function resetMoleculeSearch(){
+  document.getElementById('search-landing').style.display = 'flex';
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('ai-search-input').value = '';
+}
+function toggleAdvancedSearch(){
+  const form = document.getElementById('advanced-search-form');
+  const label = document.getElementById('advanced-toggle-label');
+  const showing = form.style.display === 'block';
+  form.style.display = showing ? 'none' : 'block';
+  label.textContent = showing ? 'Show structured search →' : 'Hide structured search ←';
+}
+document.getElementById('ai-search-input').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); runIntelligentSearch(); }
+});
+function buildDatasetContext(){
+  return approvedProducts.map(p => ({
+    brand: p.brand, inn: p.inn, company: p.company, form: p.form, route: p.route,
+    pathway: p.pathway, basicRecord: !!p.basicRecord,
+    bcsClass: p.bcsClass || null,
+    excipients: p.excipients || null,
+    apiForm: p.apiForm || null,
+    polymorphicForm: p.polymorphicForm || null,
+    mdd: p.mdd, mddNote: p.mddNote,
+    genericStatus: p.genericStatus,
+  }));
+}
+async function runIntelligentSearch(presetQuery){
+  const inputEl = document.getElementById('ai-search-input');
+  const query = (presetQuery || inputEl.value || '').trim();
+  if(!query) return;
+  inputEl.value = query;
+
+  document.getElementById('search-landing').style.display = 'none';
+  const results = document.getElementById('search-results');
+  results.style.display = 'block';
+  results.innerHTML = `<div class="search-back" onclick="resetMoleculeSearch()">← New search</div><div class="thinking" style="padding:20px 0;"><span></span><span></span><span></span></div>`;
+  revealWorkspaceNav();
+
+  const dataset = buildDatasetContext();
+  const systemPrompt = `You are a regulatory intelligence search assistant inside a generics-development platform called Isogenerix. You have access to ONLY the following small demo dataset of reference-listed drug (RLD) records — this is NOT a live connection to FDA/EMA databases, it's a fixed JSON array of ${dataset.length} products with real, hand-researched data, far from comprehensive.
+
+DATASET:
+${JSON.stringify(dataset, null, 1)}
+
+FIELD COVERAGE NOTES (be upfront about these limits when relevant to the query):
+- "excipients", "apiForm", "polymorphicForm", "bcsClass" are only populated for products where basicRecord is false — the rest are patent-status-only records.
+- There is NO packaging / container closure system data (vial, syringe, COP, blister, bottle, stopper material, etc.) anywhere in this dataset.
+- There are NO injectable products in this dataset currently — all current entries are oral solid dosage forms (tablets/capsules).
+- There is no data on silicone oil, coatings beyond what's in "excipients", or any attribute not explicitly listed above.
+
+INSTRUCTIONS:
+1. Answer the user's query using ONLY this dataset. Do not use general knowledge about other real drugs not in this list.
+2. If the query asks about an attribute this dataset doesn't track (e.g. packaging, container closure, injectable-specific attributes), say so explicitly — do not guess or fabricate a plausible-sounding answer.
+3. If there are real matches, list them by brand/INN.
+4. If there are no matches but the query is answerable in principle, say "no matches in the current ${dataset.length}-product dataset" plainly.
+5. End with one short line on what expanding data coverage (via a real EMA/FDA/Health Canada ingestion pipeline) would take to actually answer this kind of query at scale.
+6. Keep the whole response under 180 words. No markdown headers. Plain paragraphs and at most one short bullet list.`;
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 700,
+        system: systemPrompt,
+        messages: [{role:'user', content: query}]
+      })
+    });
+    const data = await response.json();
+    const raw = (data.content || []).filter(c=>c.type==='text').map(c=>c.text).join('\n');
+
+    const matchedProducts = approvedProducts.filter(p =>
+      raw.toLowerCase().includes(p.brand.toLowerCase()) || raw.toLowerCase().includes(p.inn.toLowerCase())
+    );
+
+    results.innerHTML = `
+      <div class="search-back" onclick="resetMoleculeSearch()">← New search</div>
+      <div class="module-head" style="margin-bottom:14px;">
+        <div class="module-title">"${escapeHtml(query)}"</div>
+      </div>
+      <div class="card" style="max-width:820px; margin-bottom:18px;">
+        <div class="card-body" style="font-size:13.5px; line-height:1.68;">${mdToHtml(raw || 'Could not process this query — please try again.')}</div>
+      </div>
+      ${matchedProducts.length ? `<div class="cite-num" style="display:block; margin:18px 0 10px;">MATCHING RECORDS</div>` + matchedProducts.map(p=>buildRldCard(p, {defaultOpen:false})).join('') : ''}
+    `;
+  } catch(e){
+    results.innerHTML = `<div class="search-back" onclick="resetMoleculeSearch()">← New search</div><p style="color:var(--danger)">Something went wrong running that search. Please try again.</p>`;
+  }
+}
+function scopeToolsToRld(idx){
+  revealWorkspaceNav();
+  const p = approvedProducts[idx];
+  lockRldContext(p);
+  // Give a brief visual confirmation without forcing navigation away from search results.
+  const banner = document.createElement('div');
+  banner.textContent = `Knowledge tools are now focused on ${p.brand} (${p.inn}).`;
+  banner.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; padding:10px 18px; border-radius:8px; font-size:12.5px; font-family:var(--sans); font-weight:600; z-index:999; box-shadow:0 4px 16px rgba(0,0,0,0.15);';
+  document.body.appendChild(banner);
+  setTimeout(()=> banner.remove(), 2600);
+}
+function goToRldAnalysis(idx){
+  revealWorkspaceNav();
+  // switch to Generic vs RLD view, Q1/Q2 subtab, and lock context to this single RLD
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  document.querySelector('.nav-item[data-view="approved"]').classList.add('active');
+  views.forEach(name=> document.getElementById('view-'+name).classList.toggle('active', name==='approved'));
+  document.querySelectorAll('#approved-subtabs .subtab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('#approved-subtabs .subtab[data-sub="q1q2"]').classList.add('active');
+  document.querySelectorAll('.subview').forEach(v=>v.classList.remove('active'));
+  document.getElementById('sub-q1q2').classList.add('active');
+
+  const p = approvedProducts[idx];
+  const rldIdx = rldForQ1Q2.indexOf(p);
+  if(rldIdx > -1){
+    document.getElementById('q1q2-rld').value = rldIdx;
+    document.getElementById('biowaiver-rld').value = rldIdx;
+    lockRldContext(p);
+    document.getElementById('q1q2-results').innerHTML = '';
+    renderBiowaiver();
+  } else {
+    // Biologic with no tablet-based RLD entry — no Q1/Q2 or biowaiver context applies
+    unlockRldContext();
+    document.getElementById('q1q2-results').innerHTML = `<div class="ledger-empty">${p.brand} (${p.inn}) is a biologic with no oral solid dosage form — Q1/Q2 sameness and BCS-based biowaiver don't apply. See its Generic Landscape / Biosimilar pathway status instead.</div>`;
+  }
+}
+let lockedRldProduct = null;
+function lockRldContext(p){
+  lockedRldProduct = p;
+  document.getElementById('q1q2-rld-field').dataset.locked = '1';
+  document.getElementById('biowaiver-rld-field').dataset.locked = '1';
+  ['q1q2','biowaiver'].forEach(prefix=>{
+    document.getElementById(prefix+'-locked-banner').style.display = 'flex';
+    document.getElementById(prefix+'-locked-name').textContent = `${p.brand} (${p.inn})`;
+    document.getElementById(prefix+'-rld').style.display = 'none';
+  });
+  ['patent','landscape'].forEach(prefix=>{
+    document.getElementById(prefix+'-locked-banner').style.display = 'flex';
+    document.getElementById(prefix+'-locked-name').textContent = `Showing: ${p.brand} (${p.inn})`;
+  });
+  if(typeof renderPatents === 'function') renderPatents();
+  if(typeof renderLandscape === 'function') renderLandscape();
+  applyImpurityLock();
+  applyStabilityLock();
+  applyRegulatoryLock();
+  applyNitrosamineLock();
+}
+function unlockRldContext(){
+  lockedRldProduct = null;
+  ['q1q2','biowaiver'].forEach(prefix=>{
+    document.getElementById(prefix+'-rld-field').dataset.locked = '';
+    document.getElementById(prefix+'-locked-banner').style.display = 'none';
+    document.getElementById(prefix+'-rld').style.display = 'block';
+  });
+  ['patent','landscape'].forEach(prefix=>{
+    document.getElementById(prefix+'-locked-banner').style.display = 'none';
+  });
+  if(typeof renderPatents === 'function') renderPatents();
+  if(typeof renderLandscape === 'function') renderLandscape();
+  applyImpurityLock();
+  applyStabilityLock();
+  applyRegulatoryLock();
+  applyNitrosamineLock();
+}
+function applyImpurityLock(){
+  const banner = document.getElementById('impurity-locked-banner');
+  const naNotice = document.getElementById('impurity-na-notice');
+  const calcPanel = document.getElementById('impurity-calc-panel');
+  if(!banner) return;
+  if(lockedRldProduct){
+    banner.style.display = 'flex';
+    document.getElementById('impurity-locked-name').textContent = `Calculating for: ${lockedRldProduct.brand} (${lockedRldProduct.inn})`;
+    if(lockedRldProduct.mdd !== null && lockedRldProduct.mdd !== undefined){
+      document.getElementById('mdd-value').value = lockedRldProduct.mdd;
+      document.getElementById('mdd-unit').value = 'mg';
+      naNotice.style.display = 'none';
+      calcPanel.style.display = 'block';
+      calcImpurity();
+      const noteEl = document.getElementById('impurity-results');
+      if(noteEl && lockedRldProduct.mddNote){
+        noteEl.insertAdjacentHTML('afterend', `<div class="detail-note" id="impurity-mdd-note" style="max-width:960px; margin-top:10px;"><strong>Dose basis:</strong> ${lockedRldProduct.mddNote}</div>`);
+      }
+    } else {
+      calcPanel.style.display = 'none';
+      naNotice.style.display = 'block';
+      naNotice.innerHTML = `<div class="feed-item" style="border:none;"><div class="feed-body" style="line-height:1.6;"><strong>ICH Q3A/Q3B not applicable.</strong> ${lockedRldProduct.mddNote}</div></div>`;
+      document.getElementById('impurity-results').innerHTML = '';
+    }
+  } else {
+    banner.style.display = 'none';
+    naNotice.style.display = 'none';
+    calcPanel.style.display = 'block';
+    const oldNote = document.getElementById('impurity-mdd-note');
+    if(oldNote) oldNote.remove();
+  }
+}
+
+function applyNitroPreset(){
+  const val = document.getElementById('nitro-preset').value;
+  if(val){
+    document.getElementById('nitro-ai').value = val;
+    calcNitrosamine();
+  }
+}
+function calcNitrosamine(){
+  const ai = parseFloat(document.getElementById('nitro-ai').value);
+  const mdd = parseFloat(document.getElementById('nitro-mdd').value);
+  const out = document.getElementById('nitro-calc-out');
+  if(isNaN(ai) || isNaN(mdd) || mdd <= 0){
+    out.querySelector('.calc-result-num').textContent = '—';
+    out.querySelector('.calc-result-label').textContent = 'Enter a valid AI and MDD';
+    return;
+  }
+  const ppm = ai / mdd;
+  out.querySelector('.calc-result-num').textContent = ppm.toFixed(4) + ' ppm';
+  out.querySelector('.calc-result-label').textContent = `Control limit at ${mdd} mg/day MDD (AI = ${ai} ng/day)`;
+}
+function applyNitrosamineLock(){
+  const banner = document.getElementById('nitrosamine-locked-banner');
+  if(!banner) return;
+  if(lockedRldProduct){
+    banner.style.display = 'flex';
+    document.getElementById('nitrosamine-locked-name').textContent = `Showing calculator prefilled for: ${lockedRldProduct.brand} (${lockedRldProduct.inn})`;
+    if(lockedRldProduct.mdd !== null && lockedRldProduct.mdd !== undefined){
+      document.getElementById('nitro-mdd').value = lockedRldProduct.mdd;
+      calcNitrosamine();
+    }
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+/* ---------------- SUBTABS ---------------- */
+document.querySelectorAll('#approved-subtabs .subtab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('#approved-subtabs .subtab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const sub = tab.dataset.sub;
+    document.querySelectorAll('.subview').forEach(v=>v.classList.remove('active'));
+    document.getElementById('sub-'+sub).classList.add('active');
+  });
+});
+
+/* ---------------- Q1/Q2 SAMENESS CHECKER ---------------- */
+// Only small-molecule RLDs have a meaningful Q1/Q2 comparison (oral solid dose, ANDA pathway)
+let rldForQ1Q2 = [];  // recomputed in loadDatabaseAndInit() after approvedProducts loads
+function normName(s){ return s.toLowerCase().replace(/\(.*?\)/g,'').replace(/[^a-z ]/g,'').trim(); }
+
+function populateQ1Q2Select(){
+  const sel = document.getElementById('q1q2-rld');
+  sel.innerHTML = rldForQ1Q2.map((p,i)=>`<option value="${i}">${p.brand} (${p.inn})</option>`).join('');
+}
+
+function checkQ1Q2(){
+  const rld = rldForQ1Q2[document.getElementById('q1q2-rld').value];
+  const raw = document.getElementById('q1q2-input').value.trim();
+  const results = document.getElementById('q1q2-results');
+  if(!raw){ results.innerHTML = '<div class="ledger-empty">Enter your proposed generic excipient list to run the check.</div>'; return; }
+
+  const proposed = raw.split('\n').map(l=>l.trim()).filter(Boolean).map(line=>{
+    const parts = line.split(',');
+    const nameRaw = parts[0].trim();
+    const isFunctional = nameRaw.includes('*');
+    const name = nameRaw.replace('*','').trim();
+    const pct = parts[1] ? parseFloat(parts[1]) : null;
+    return { name, norm: normName(name), pct, isFunctional };
+  });
+
+  const rldNorm = rld.excipients.map(e=>({ raw:e, norm: normName(e.split('(')[0]) }));
+
+  const rows = [];
+  // Q1: check proposed excipients against RLD list
+  proposed.forEach(p=>{
+    const match = rldNorm.find(r => r.norm.includes(p.norm) || p.norm.includes(r.norm));
+    if(match){
+      rows.push({icon:'✓', cls:'flag-ok', text:`<strong>${p.name}</strong> — matches RLD excipient "${match.raw}". Q1 qualitative match.` + (p.pct!==null ? ` At ${p.pct}% w/w, quantitative tolerance is typically ±${p.isFunctional?'2':'5'}% (${p.isFunctional?'release-controlling — tighter SUPAC-type expectation':'non-functional excipient — standard SUPAC-type expectation'}); confirm against actual RLD quantitative composition once obtained (e.g. via reverse engineering or literature).` : ' Add a % w/w to evaluate Q2.')});
+    } else {
+      rows.push({icon:'✗', cls:'flag-bad', text:`<strong>${p.name}</strong> — not found in the RLD's public excipient list. This is a Q1 qualitative difference: either remove/replace it, or be prepared to justify it (generally disfavoured for oral solid ANDAs relying on Q1/Q2 sameness).`});
+    }
+  });
+  // Excipients present in RLD but missing from proposed list
+  rldNorm.forEach(r=>{
+    const found = proposed.some(p => r.norm.includes(p.norm) || p.norm.includes(r.norm));
+    if(!found){
+      rows.push({icon:'!', cls:'flag-warn', text:`RLD contains <strong>${r.raw}</strong>, which is not present in your proposed formulation — a Q1 omission. Confirm whether this excipient serves a function you need to replicate.`});
+    }
+  });
+
+  const allMatch = rows.every(r => r.icon === '✓');
+  results.innerHTML = `
+    <div class="card">
+      <div class="card-top"><div><div class="card-title">Sameness check vs. ${rld.brand} (${rld.inn})</div><div class="card-mono">${allMatch ? 'No Q1 differences detected' : 'Q1 differences flagged — review below'}</div></div>
+      <span class="pill ${allMatch?'pill-ok':'pill-warn'}">${allMatch?'Q1 aligned':'Review needed'}</span></div>
+      <div class="card-body" style="margin-top:8px;">
+        ${rows.map(r=>`<div class="flag-row"><span class="flag-icon ${r.cls}">${r.icon}</span><span>${r.text}</span></div>`).join('')}
+        <div class="detail-note" style="margin-top:10px;">This is a qualitative reasoning aid based on the RLD's publicly listed excipients. RLD label reports Q1 (identity) only — exact Q2 (quantitative) composition is proprietary; true Q2 sameness must be confirmed via reverse-engineering studies or your own formulation data, per FDA's product-specific guidance where available.</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- BIOWAIVER GUIDANCE ---------------- */
+function populateBiowaiverSelect(){
+  const sel = document.getElementById('biowaiver-rld');
+  sel.innerHTML = rldForQ1Q2.map((p,i)=>`<option value="${i}">${p.brand} (${p.inn}) — BCS ${p.bcsClass}</option>`).join('');
+}
+// Since ICH M9 (2019), FDA/EMA/Health Canada have substantially harmonized BCS-based biowaiver criteria;
+// remaining differences are noted per market rather than treated as fully separate frameworks.
+const biowaiverGuidance = {
+  'I': {
+    label:'BCS Class I — High solubility, high permeability',
+    us:{eligible:'Generally eligible', detail:'Rapid, similar dissolution (≥85% in 30 min, pH 1.2/4.5/6.8) generally sufficient in lieu of in vivo BE, provided excipients don\'t affect absorption and the drug isn\'t narrow therapeutic index.'},
+    eu:{eligible:'Generally eligible', detail:'Same core dissolution criteria as FDA under ICH M9; EMA has historically been somewhat stricter on requiring the test product\'s excipients to be qualitatively the same and quantitatively very similar to the RLD, even for Class I.'},
+    ca:{eligible:'Generally eligible', detail:'Health Canada\'s BCS-based biowaiver guidance (aligned to ICH M9) permits a biowaiver for Class I under equivalent dissolution and excipient-similarity conditions.'}
+  },
+  'II': {
+    label:'BCS Class II — Low solubility, high permeability',
+    us:{eligible:'Not generally eligible', detail:'Dissolution is rate-limiting, so in vitro data alone can\'t reliably predict in vivo performance — in vivo BE normally required. Weak-acid Class II drugs with high solubility at high pH occasionally qualify narrowly; check FDA Product-Specific Guidance.'},
+    eu:{eligible:'Not generally eligible', detail:'Same rationale as FDA; EMA product-specific guidance occasionally permits dissolution-only waivers for select strengths where a validated IVIVC exists (as has occurred for some rivaroxaban strengths).'},
+    ca:{eligible:'Not generally eligible', detail:'Health Canada does not extend the standard BCS biowaiver to Class II; an in vivo BE study is expected absent a specific, validated exception.'}
+  },
+  'III': {
+    label:'BCS Class III — High solubility, low permeability',
+    us:{eligible:'Conditionally eligible', detail:'Possible if the test product is very rapidly dissolving (≥85% in 15 min, all three media) and Q1/Q2 the same as the RLD except for excipients known not to affect absorption — a stricter Q1/Q2 bar than Class I.'},
+    eu:{eligible:'Conditionally eligible, narrower in practice', detail:'EMA applies the same very-rapid-dissolution and Q1/Q2 conditions but has historically been more conservative about which excipients are considered "not affecting absorption," making the practical bar somewhat higher than the US in some cases.'},
+    ca:{eligible:'Conditionally eligible (more recent alignment)', detail:'Health Canada\'s adoption of Class III biowaivers is more recent than FDA\'s/EMA\'s — confirm current applicability against the latest Health Canada guidance before relying on it, as historical policy leaned toward Class I only.'}
+  },
+  'IV': {
+    label:'BCS Class IV — Low solubility, low permeability',
+    us:{eligible:'Not eligible', detail:'Both solubility and permeability limiting; in vivo BE study required.'},
+    eu:{eligible:'Not eligible', detail:'Same position as FDA — no biowaiver pathway.'},
+    ca:{eligible:'Not eligible', detail:'Same position — in vivo BE study required.'}
+  },
+  'unclear': {
+    label:'BCS classification not settled in public sources',
+    us:{eligible:'Depends on confirmed class', detail:'Published sources disagree on this molecule\'s BCS class (Class I vs. III have both been cited) — request or generate actual solubility/permeability data before assuming any biowaiver eligibility. Don\'t default to the more favorable classification without evidence.'},
+    eu:{eligible:'Depends on confirmed class', detail:'Same caveat applies — EMA would expect the sponsor to establish and justify the BCS class experimentally as part of any biowaiver request, not cite literature classifications alone.'},
+    ca:{eligible:'Depends on confirmed class', detail:'Same caveat applies — confirm classification experimentally before relying on any biowaiver strategy for Health Canada.'}
+  },
+  'NA': {
+    label:'Not applicable',
+    us:{eligible:'BCS framework N/A', detail:'Biologic — follows BPCIA biosimilar comparability (analytical, functional, PK/PD, clinical where needed), not BCS-based dissolution waivers.'},
+    eu:{eligible:'BCS framework N/A', detail:'Biologic — follows the EU biosimilar pathway (comparability exercise), not BCS-based waivers.'},
+    ca:{eligible:'BCS framework N/A', detail:'Biologic — follows Health Canada\'s Subsequent Entry Biologic (biosimilar) pathway, not BCS-based waivers.'}
+  }
+};
+function renderBiowaiver(){
+  const rld = rldForQ1Q2[document.getElementById('biowaiver-rld').value];
+  const g = biowaiverGuidance[rld.bcsClass] || biowaiverGuidance['NA'];
+  const results = document.getElementById('biowaiver-results');
+  const marketCard = (flag, name, m) => `
+    <div class="card" style="flex:1; min-width:220px;">
+      <div class="card-top"><div class="card-title" style="font-size:13px;">${flag} ${name}</div><span class="pill ${m.eligible.toLowerCase().includes('not')?'pill-neutral':(m.eligible.toLowerCase().includes('generally eligible')?'pill-ok':'pill-warn')}">${m.eligible}</span></div>
+      <div class="card-body" style="margin-top:8px; font-size:12px; line-height:1.55;">${m.detail}</div>
+    </div>
+  `;
+  results.innerHTML = `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-top"><div><div class="card-title">${rld.brand} (${rld.inn})</div><div class="card-mono">${g.label}</div></div></div>
+    </div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+      ${marketCard('🇺🇸','United States (FDA)', g.us)}
+      ${marketCard('🇪🇺','European Union (EMA)', g.eu)}
+      ${marketCard('🇨🇦','Canada (Health Canada)', g.ca)}
+    </div>
+    <div class="feed-item" style="border:none;">
+      <div class="feed-body" style="line-height:1.6;">Harmonized substantially by <strong>ICH M9</strong> (2019), but always cross-check the current FDA <strong>Product-Specific Guidance</strong>, EMA bioequivalence guideline/scientific advice, and Health Canada's biowaiver guidance for the specific API — individual molecules sometimes get bespoke conditions that override the general BCS-class rule of thumb shown here.</div>
+    </div>
+  `;
+}
+
+/* ---------------- FORMULATION BUILDER WIZARD ---------------- */
+const builderState = {
+  step: 0,
+  apiName:'', dose:'', doseUnit:'mg', bcsClass:'', solubility:'', particleSize:'',
+  releaseProfile:'', mfgProcess:'', packaging:''
+};
+const builderSteps = ['API Properties','Release Profile','Manufacturing','Packaging','Review'];
+
+function wizardRadioGroup(field, options){
+  return `<div class="wizard-radio-group">${options.map(o=>`
+    <div class="wizard-radio ${builderState[field]===o?'selected':''}" onclick="setBuilderField('${field}','${o}')">${o}</div>
+  `).join('')}</div>`;
+}
+function setBuilderField(field, value){
+  builderState[field] = value;
+  renderWizard();
+}
+function renderWizardStepDots(){
+  return `<div class="wizard-steps">${builderSteps.map((s,i)=>`
+    <div class="wizard-step-dot ${i===builderState.step?'current':(i<builderState.step?'done':'')}">${i+1}. ${s}</div>
+  `).join('')}</div>`;
+}
+function renderWizard(){
+  const container = document.getElementById('builder-wizard');
+  let body = '';
+  if(builderState.step === 0){
+    body = `
+      <div class="wizard-field"><label>API name / identifier</label><input type="text" id="w-apiName" value="${builderState.apiName}" placeholder="e.g. Compound XR-118 or INN"></div>
+      <div style="display:flex; gap:12px;">
+        <div class="wizard-field" style="flex:1;"><label>Target dose</label><input type="number" id="w-dose" value="${builderState.dose}" placeholder="e.g. 250"></div>
+        <div class="wizard-field" style="width:110px;"><label>Unit</label><select id="w-doseUnit"><option ${builderState.doseUnit==='mg'?'selected':''}>mg</option><option ${builderState.doseUnit==='mcg'?'selected':''}>mcg</option><option ${builderState.doseUnit==='g'?'selected':''}>g</option></select></div>
+      </div>
+      <div class="wizard-field"><label>BCS class (if known)</label>${wizardRadioGroup('bcsClass',['I','II','III','IV','Unknown'])}</div>
+      <div class="wizard-field"><label>Solubility notes</label><textarea id="w-solubility" placeholder="e.g. Freely soluble at pH 1.2, poorly soluble above pH 5; pKa 4.2">${builderState.solubility}</textarea></div>
+      <div class="wizard-field"><label>Particle size (if known)</label><input type="text" id="w-particleSize" value="${builderState.particleSize}" placeholder="e.g. D50 ≈ 15 µm, micronised"></div>
+    `;
+  } else if(builderState.step === 1){
+    body = `<div class="wizard-field"><label>Desired release profile</label>${wizardRadioGroup('releaseProfile',['Immediate release','Modified/extended release','Delayed/enteric release','Orally disintegrating'])}</div>`;
+  } else if(builderState.step === 2){
+    body = `<div class="wizard-field"><label>Preferred manufacturing process (if any)</label>${wizardRadioGroup('mfgProcess',['Direct compression','Wet granulation','Dry granulation / roller compaction','No preference'])}</div>`;
+  } else if(builderState.step === 3){
+    body = `<div class="wizard-field"><label>Packaging preference</label>${wizardRadioGroup('packaging',['Blister (Alu/Alu or Alu/PVC)','HDPE bottle','Unit-dose pouch/sachet','No preference'])}</div>`;
+  } else if(builderState.step === 4){
+    body = `
+      <div style="font-size:13px; line-height:1.8;">
+        <strong>API:</strong> ${builderState.apiName||'—'}<br>
+        <strong>Dose:</strong> ${builderState.dose||'—'} ${builderState.doseUnit}<br>
+        <strong>BCS class:</strong> ${builderState.bcsClass||'—'}<br>
+        <strong>Solubility:</strong> ${builderState.solubility||'—'}<br>
+        <strong>Particle size:</strong> ${builderState.particleSize||'—'}<br>
+        <strong>Release profile:</strong> ${builderState.releaseProfile||'—'}<br>
+        <strong>Manufacturing preference:</strong> ${builderState.mfgProcess||'—'}<br>
+        <strong>Packaging:</strong> ${builderState.packaging||'—'}
+      </div>
+      <button class="btn-solid" style="margin-top:16px;" onclick="generateFormulation()">Generate formulation recommendation</button>
+    `;
+  }
+  const backBtn = builderState.step > 0 ? `<button class="btn-ghost" onclick="wizardNav(-1)">← Back</button>` : `<div></div>`;
+  const nextBtn = builderState.step < builderSteps.length - 1 ? `<button class="btn-solid" onclick="wizardNav(1)">Next →</button>` : `<div></div>`;
+  container.innerHTML = `
+    ${renderWizardStepDots()}
+    <div class="wizard-panel">${body}</div>
+    <div class="wizard-nav">${backBtn}${nextBtn}</div>
+  `;
+  if(builderState.step === 0){
+    document.getElementById('w-apiName').addEventListener('input', e=> builderState.apiName = e.target.value);
+    document.getElementById('w-dose').addEventListener('input', e=> builderState.dose = e.target.value);
+    document.getElementById('w-doseUnit').addEventListener('change', e=> builderState.doseUnit = e.target.value);
+    document.getElementById('w-solubility').addEventListener('input', e=> builderState.solubility = e.target.value);
+    document.getElementById('w-particleSize').addEventListener('input', e=> builderState.particleSize = e.target.value);
+  }
+}
+function wizardNav(dir){
+  builderState.step = Math.max(0, Math.min(builderSteps.length-1, builderState.step + dir));
+  renderWizard();
+}
+function findMatchingRld(apiNameInput){
+  const q = (apiNameInput || '').trim().toLowerCase();
+  if(!q) return null;
+  return approvedProducts.find(p =>
+    p.inn.toLowerCase().includes(q) || q.includes(p.inn.toLowerCase()) ||
+    p.brand.toLowerCase().includes(q) || q.includes(p.brand.toLowerCase())
+  ) || null;
+}
+
+async function generateFormulation(){
+  const output = document.getElementById('builder-output');
+  output.innerHTML = `<div class="thinking" style="padding:14px 0;"><span></span><span></span><span></span></div>`;
+
+  const match = findMatchingRld(builderState.apiName);
+  let groundingBlock = '';
+  let groundingBadge = '';
+
+  if(match && !match.basicRecord){
+    groundingBlock = `
+KNOWN REFERENCE PRODUCT ON FILE — use this real data as grounding, don't invent conflicting facts:
+- RLD: ${match.brand} (${match.inn}), ${match.company}
+- Confirmed excipients (from public assessment report): ${match.excipients.join('; ')}
+- BCS class: ${match.bcs}
+- API physical form: ${match.apiForm}
+- Polymorphic form: ${match.polymorphicForm || 'not specified'}
+- Drug substance spec tests: ${match.dsTests.join('; ')}
+- Drug product spec tests: ${match.dpTests.join('; ')}
+Ground your excipient suggestions and risk assessment in how this RLD is actually formulated where relevant — e.g. note where a generic could mirror the RLD's excipient choices for Q1/Q2 sameness, and flag where deviating from them would need justification.`;
+    groundingBadge = `<div class="pill pill-ok" style="display:inline-flex; margin-bottom:12px;">Grounded in real data: ${match.brand} (${match.inn})</div>`;
+  } else if(match && match.basicRecord){
+    groundingBlock = `
+NOTE: "${match.brand} (${match.inn})" is recognized in our RLD database, but only patent/regulatory status has been researched for it so far — no verified excipient or BCS data is on file. Do not claim to know its actual formulation; reason from general pharmaceutical science instead, and say so.`;
+    groundingBadge = `<div class="pill pill-warn" style="display:inline-flex; margin-bottom:12px;">Matched ${match.brand} (${match.inn}) — patent data only, no formulation profile on file yet</div>`;
+  } else {
+    groundingBlock = `\nNo matching reference product found in our RLD database for "${builderState.apiName || 'this API'}" — reason from general pharmaceutical formulation science only, and don't imply you're referencing a specific real product's actual composition.`;
+    groundingBadge = `<div class="pill pill-neutral" style="display:inline-flex; margin-bottom:12px;">No matching RLD on file — general reasoning only</div>`;
+  }
+
+  const prompt = `Generate a first-draft formulation strategy for the following target product profile:
+- API: ${builderState.apiName || 'unspecified'}
+- Dose: ${builderState.dose || 'unspecified'} ${builderState.doseUnit}
+- BCS class: ${builderState.bcsClass || 'unknown'}
+- Solubility notes: ${builderState.solubility || 'not provided'}
+- Particle size: ${builderState.particleSize || 'not provided'}
+- Desired release profile: ${builderState.releaseProfile || 'not specified'}
+- Manufacturing process preference: ${builderState.mfgProcess || 'no preference'}
+- Packaging preference: ${builderState.packaging || 'no preference'}
+${groundingBlock}
+
+Respond in markdown with exactly these bolded section headers (as **Header**, not #), in this order: **Recommended Dosage Form**, **Excipient Suggestions**, **Manufacturing Process**, **Critical Process Parameters**, **Critical Material Attributes**, **Potential Risks**. Use bullet lists within each section. Be specific (excipient classes and example grades, realistic process steps, named risks with brief mitigation notes). This is a first-draft starting point for a formulation team to validate, not a final formulation — keep that framing in mind but don't over-hedge every line.`;
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1200,
+        system: "You are a senior formulation scientist providing a rapid first-pass formulation strategy inside a generics/CDMO development tool. Be concrete and technical, not generic. When given verified reference-product data, treat it as ground truth and reason from it explicitly rather than ignoring it in favor of generic knowledge.",
+        messages: [{role:'user', content: prompt}]
+      })
+    });
+    const data = await response.json();
+    const raw = (data.content || []).filter(c=>c.type==='text').map(c=>c.text).join('\n');
+    output.innerHTML = `${groundingBadge}<div class="card" style="max-width:820px;"><div class="card-body" style="font-size:13.5px; line-height:1.68;">${mdToHtml(raw || 'Could not generate a recommendation — please try again.')}</div></div>
+      <div class="detail-note" style="margin-top:10px;">AI-generated first draft based on the inputs provided — validate against real API characterization data, excipient compatibility studies, and your own risk assessment before committing to a formulation strategy.</div>`;
+  }catch(e){
+    output.innerHTML = `<p style="color:var(--danger)">Something went wrong generating the recommendation. Please try again.</p>`;
+  }
+}
+renderWizard();
+
+/* ---------------- PATENT & EXCLUSIVITY TRACKER ---------------- */
+let patentData = [];  // populated from isogenerix.db at load time (see loadDatabaseAndInit)
+function renderPatents(){
+  const list = document.getElementById('patent-list');
+  const data = lockedRldProduct ? patentData.filter(p => p.brand === lockedRldProduct.brand) : patentData;
+  if(lockedRldProduct && data.length === 0){
+    list.innerHTML = `<div class="ledger-empty">No patent/exclusivity tracking data recorded for ${lockedRldProduct.brand} in this sample set yet.</div>`;
+    return;
+  }
+  list.innerHTML = data.map(p=>`
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-top">
+        <div>
+          <div class="card-title">${p.brand} <span style="color:var(--ink-muted); font-weight:500;">(${p.inn})</span></div>
+        </div>
+        <span class="pill pill-neutral">${p.bookType}</span>
+      </div>
+      <div class="card-body" style="margin-top:10px;">
+        <table class="data-table" style="margin-bottom:10px;">
+          <tr><th>Type</th><th>Reference</th><th>Expiry / Status</th></tr>
+          ${p.entries.map(e=>`<tr><td>${e.type}</td><td>${e.ref}</td><td>${e.expiry}</td></tr>`).join('')}
+        </table>
+        <div class="detail-note">${p.note}</div>
+      </div>
+    </div>
+  `).join('') + `<div class="feed-item" style="border:none;"><div class="feed-body" style="line-height:1.6;">Sourced from FDA Orange Book/Purple Book status and public patent-tracking reporting (e.g. drugpatentwatch.com, Pharmacy Times patent-expiration coverage) as of mid-2026. Patent and litigation status changes frequently — verify against the live FDA Orange Book (accessible via the FDA website) before relying on this for a filing decision.</div></div>`;
+}
+
+/* ---------------- CROSS-MARKET GENERIC LANDSCAPE (US/CA proof of concept) ---------------- */
+let landscapeData = [];  // populated from isogenerix.db at load time (see loadDatabaseAndInit)
+function renderLandscape(){
+  const list = document.getElementById('landscape-list');
+  const data = lockedRldProduct ? landscapeData.filter(p => p.brand === lockedRldProduct.brand) : landscapeData;
+  if(lockedRldProduct && data.length === 0){
+    list.innerHTML = `<div class="ledger-empty">No US/Canada generic-landscape data recorded for ${lockedRldProduct.brand} in this sample set yet — it's likely a biologic with no small-molecule generic pathway (see Patent &amp; Exclusivity Tracker instead).</div>`;
+    return;
+  }
+  list.innerHTML = data.map(p=>`
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-top">
+        <div>
+          <div class="card-title">${p.brand} <span style="color:var(--ink-muted); font-weight:500;">(${p.inn})</span></div>
+          <div class="card-mono">Reference: ${p.rldNumber}</div>
+        </div>
+      </div>
+      <div class="card-body" style="margin-top:10px;">
+        <div class="detail-row"><div class="detail-label">🇺🇸 United States</div><div class="detail-val"><strong>${p.us.status}</strong><br>${p.us.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.us.source}</span></div></div>
+        <div class="detail-row"><div class="detail-label">🇨🇦 Canada</div><div class="detail-val"><strong>${p.ca.status}</strong><br>${p.ca.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.ca.source}</span></div></div>
+      </div>
+    </div>
+  `).join('') + `
+    <div class="feed-item" style="border:none;">
+      <div class="feed-body" style="line-height:1.6;">
+        <strong>What a real pipeline would add:</strong> this proof-of-concept was hand-researched for two products. A production version would instead ingest FDA's Orange Book <code>products.txt</code> (RLD flag, applicant, approval date, TE code — updated monthly, daily for new generic approvals) and <code>patent.txt</code>/<code>exclusivity.txt</code>, plus Health Canada's Drug Product Database extract (~20,000 products, updated nightly) — joined to the EMA innovator profiles by active ingredient (INN), so every RLD in the system automatically shows its live US/Canada generic status without manual research per product.
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- REGULATORY FEED ---------------- */
+const regItems = [
+  {date:'2026-06-18', src:'ICH', title:'Q13 Continuous Manufacturing — Q&A Addendum', body:'Additional clarifications on control strategy expectations for integrated continuous manufacturing trains, including RTRT justification.'},
+  {date:'2026-06-02', src:'FDA', title:'Draft Guidance: Data Integrity Considerations for CMC Submissions', body:'Expanded expectations for audit trail review scope in electronic batch records supporting NDA/ANDA CMC sections.'},
+  {date:'2026-05-21', src:'EMA', title:'Reflection Paper on Green Solvents in Drug Product Manufacturing', body:'Encourages early solvent-selection risk assessment for new processes, referencing ICH Q3C class shifts.'},
+  {date:'2026-05-09', src:'ICH', title:'Q2(R2)/Q14 Analytical Procedure Development — Training Materials Update', body:'New worked examples on Analytical Target Profile (ATP) development for dissolution and impurity methods.'},
+  {date:'2026-04-30', src:'FDA', title:'Update: Inactive Ingredient Database (IID) Refresh', body:'Revised maximum daily intake limits for several oral disintegrants and polymers used in modified-release products.'},
+  {date:'2026-04-14', src:'ICH', title:'Q9(R1) Quality Risk Management — Implementation Considerations', body:'Further guidance on formality of risk assessment scaled to product/process risk, relevant to QbD-based filings.'},
+];
+const regFeed = document.getElementById('reg-feed');
+
+const sponsoredInsight = document.createElement('div');
+sponsoredInsight.className = 'feed-item sponsored-card';
+sponsoredInsight.style.borderRadius = '8px';
+sponsoredInsight.style.padding = '14px 16px';
+sponsoredInsight.style.marginBottom = '6px';
+sponsoredInsight.innerHTML = `
+  <div class="feed-top"><span class="sponsored-badge">Sponsored · Industry Insight</span><span class="feed-date">Example placement</span></div>
+  <div class="feed-title">Example: "Navigating ICH Q13 for Continuous Manufacturing" — Sponsor Name</div>
+  <div class="feed-body">Illustrates where a supplier/CDMO could sponsor an editorial-style insight piece alongside real guidance news — clearly labeled, contextually relevant, not a real ad.</div>
+`;
+regFeed.appendChild(sponsoredInsight);
+
+/* ---------------- REGIONAL REQUIREMENTS COMPARISON ---------------- */
+// Rows describe genuine, defensible differences/harmonization across agencies for small-molecule oral generics.
+// Deliberately drug-form-level (not fabricated per-INN distinctions) since that's where real regional variation lives.
+const regionalComparisonRows = [
+  {
+    req:'Stability climatic zone (long-term)',
+    fda:'Zone II — 25°C/60% RH', ema:'Zone II — 25°C/60% RH', ca:'Zone II — 25°C/60% RH',
+    pmda:'Zone II — 25°C/60% RH (per ICH Q1A(R2))', mhra:'Zone II — 25°C/60% RH (aligned with prior EU practice)',
+    who:'Zone IVb — 30°C/75% RH', highlight:'who',
+    note:'WHO prequalification targets global/tropical markets, so it defaults to the more stringent Zone IVb condition even though the other five agencies converge on Zone II via ICH Q1A(R2).'
+  },
+  {
+    req:'BCS-based biowaiver policy',
+    fda:'Class I &amp; III (conditional)', ema:'Class I &amp; III (conditional, stricter excipient-sameness bar)', ca:'Class I; Class III adoption more recent',
+    pmda:'More conservative — often requires in vivo BE even for BCS I in practice', mhra:'Aligned with pre-Brexit EU practice; largely mirrors EMA',
+    who:'Follows ICH M9-aligned criteria for prequalification', highlight:'pmda',
+    note:'Japan\'s PMDA has historically been the most conservative of the six on accepting dissolution-only biowaivers — budget for an in vivo BE study as the default assumption for Japan even where FDA/EMA might accept a waiver.'
+  },
+  {
+    req:'Impurity thresholds (ICH Q3A/Q3B)',
+    fda:'ICH-harmonized', ema:'ICH-harmonized', ca:'ICH-harmonized',
+    pmda:'ICH-harmonized', mhra:'ICH-harmonized', who:'References ICH thresholds; not an ICH member itself', highlight:null,
+    note:'This is the area with the least real variation — FDA, EMA, Health Canada, PMDA, and MHRA are all ICH member agencies applying the same Q3A/Q3B thresholds; WHO is not an ICH member but its prequalification guidance references the same limits.'
+  },
+  {
+    req:'Elemental impurities (ICH Q3D)',
+    fda:'ICH-harmonized', ema:'ICH-harmonized', ca:'ICH-harmonized', pmda:'ICH-harmonized', mhra:'ICH-harmonized',
+    who:'References ICH Q3D via prequalification guidance', highlight:null,
+    note:'Also substantially harmonized — genuine differences here are rare and usually procedural rather than limit-based.'
+  },
+  {
+    req:'Generic submission procedure',
+    fda:'ANDA (Hatch-Waxman)', ema:'National / MRP / DCP — centralised procedure is the exception, not the rule, for most generics', ca:'ANDS (Abbreviated New Drug Submission)',
+    pmda:'Japanese generic approval process, sometimes with bridging-study expectations', mhra:'UK national procedure (post-Brexit, independent of EMA)',
+    who:'WHO Prequalification dossier — its own format, ICH-CTD-like but not identical', highlight:'ema',
+    note:'The EU is the one that most surprises people: most generics are NOT centrally authorised by EMA — they go through national, mutual-recognition, or decentralised procedures with individual member states, unlike the innovator RLD which may well be centrally authorised.'
+  },
+];
+function renderRegionalComparison(){
+  const container = document.getElementById('regional-comparison');
+  if(!container) return;
+  if(!lockedRldProduct){
+    container.innerHTML = '';
+    return;
+  }
+  const p = lockedRldProduct;
+  const isSmallMolecule = p.bcsClass && p.bcsClass !== 'NA';
+  const cols = ['fda','ema','ca','pmda','mhra','who'];
+  const colLabels = {fda:'🇺🇸 FDA', ema:'🇪🇺 EMA', ca:'🇨🇦 Health Canada', pmda:'🇯🇵 PMDA', mhra:'🇬🇧 MHRA', who:'🌍 WHO'};
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-top"><div><div class="card-title">Regional requirements — ${p.brand} (${p.inn})</div><div class="card-mono">${isSmallMolecule ? 'Small-molecule oral solid — comparison applies as shown' : 'Biologic — biowaiver/BCS rows below are not applicable; see note'}</div></div></div>
+      <div class="card-body" style="margin-top:10px; overflow-x:auto;">
+        <table class="data-table" style="min-width:900px;">
+          <tr><th>Requirement</th>${cols.map(c=>`<th>${colLabels[c]}</th>`).join('')}</tr>
+          ${regionalComparisonRows.map(r=>`
+            <tr>
+              <td><strong>${r.req}</strong></td>
+              ${cols.map(c=>`<td style="${r.highlight===c?'background:var(--flag-dim); font-weight:600;':''}">${(!isSmallMolecule && (r.req.includes('BCS') || r.req.includes('biowaiver'))) ? '<span style="color:var(--ink-muted);">N/A — biologic</span>' : r[c]}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+    </div>
+    ${regionalComparisonRows.filter(r=>r.highlight).map(r=>`
+      <div class="feed-item" style="border:none;"><div class="feed-body" style="line-height:1.6;"><strong>${r.req}:</strong> ${r.note}</div></div>
+    `).join('')}
+    ${!isSmallMolecule ? `<div class="feed-item" style="border:none;"><div class="feed-body" style="line-height:1.6;"><strong>Biologic note:</strong> ${p.brand} follows biosimilar comparability pathways (BPCIA in the US, the EU biosimilar pathway, Health Canada's Subsequent Entry Biologic pathway, etc.) rather than the small-molecule generic rows above — those pathways have their own significant regional differences not detailed in this table.</div></div>` : ''}
+    <div class="feed-item" style="border:none;"><div class="feed-body" style="line-height:1.6; font-size:11.5px; color:var(--ink-muted);">This comparison reflects dosage-form-level regulatory patterns (oral solid vs. biologic), not bespoke research into ${p.inn}-specific product guidance in each region — always check each agency's current product-specific guidance before relying on this for a real filing strategy.</div></div>
+  `;
+}
+function applyRegulatoryLock(){
+  const banner = document.getElementById('regulatory-locked-banner');
+  if(!banner) return;
+  if(lockedRldProduct){
+    banner.style.display = 'flex';
+    document.getElementById('regulatory-locked-name').textContent = `Comparing regional requirements for: ${lockedRldProduct.brand} (${lockedRldProduct.inn})`;
+  } else {
+    banner.style.display = 'none';
+  }
+  renderRegionalComparison();
+}
+
+
+regItems.forEach(r=>{
+  const item = document.createElement('div');
+  item.className = 'feed-item';
+  item.innerHTML = `
+    <div class="feed-top"><span class="cite-badge badge-${r.src.toLowerCase()==='ich'?'ich':(r.src.toLowerCase()==='fda'?'db':'lit')}">${r.src}</span><span class="feed-date">${r.date}</span></div>
+    <div class="feed-title">${r.title}</div>
+    <div class="feed-body">${r.body}</div>
+  `;
+  regFeed.appendChild(item);
+});
+
+/* ---------------- IMPURITY LIMITS (ICH Q3A/Q3B) ---------------- */
+// ICH Q3A(R2) — New Drug Substances: simple 2-tier table (breakpoint at 2 g/day)
+function q3aThresholds(mddMg, mddG){
+  const reportingPct = mddG <= 2 ? 0.05 : 0.03;
+  let idResult, qualResult;
+  if(mddG <= 2){
+    idResult = bindingValue(mddMg, 0.10, 1.0);   // 0.10% or 1.0 mg/day, whichever is lower
+    qualResult = bindingValue(mddMg, 0.15, 1.0); // 0.15% or 1.0 mg/day, whichever is lower
+  } else {
+    idResult = { mg: mddMg * 0.05 / 100, pct: 0.05, basis: '% only (dose > 2 g/day)' };
+    qualResult = { mg: mddMg * 0.05 / 100, pct: 0.05, basis: '% only (dose > 2 g/day)' };
+  }
+  return { reportingPct, idResult, qualResult };
+}
+// ICH Q3B(R2) — New Drug Products: granular table with TDI-capped tiers
+function q3bIdQualThresholds(mddMg){
+  let idPct, idTDI, qualPct, qualTDI;
+  if(mddMg < 1){ idPct = 1.0; idTDI = 0.005; }        // 5 µg TDI
+  else if(mddMg <= 10){ idPct = 0.5; idTDI = 0.02; }   // 20 µg TDI
+  else if(mddMg <= 2000){ idPct = 0.2; idTDI = 2; }    // 2 mg TDI
+  else { idPct = 0.10; idTDI = null; }
+
+  if(mddMg < 10){ qualPct = 1.0; qualTDI = 0.05; }     // 50 µg TDI
+  else if(mddMg <= 100){ qualPct = 0.5; qualTDI = 0.2; } // 200 µg TDI
+  else if(mddMg <= 2000){ qualPct = 0.2; qualTDI = 3; } // 3 mg TDI
+  else { qualPct = 0.15; qualTDI = null; }
+
+  return { idPct, idTDI, qualPct, qualTDI };
+}
+function bindingValue(mddMg, pct, tdiMg){
+  const pctAsMg = mddMg * pct / 100;
+  if(tdiMg === null) return { mg: pctAsMg, pct: pct, basis: '% only (dose > 2 g)' };
+  if(pctAsMg <= tdiMg) return { mg: pctAsMg, pct: pct, basis: `% basis binds (${pct}% < TDI cap)` };
+  return { mg: tdiMg, pct: (tdiMg / mddMg) * 100, basis: `TDI cap binds (${tdiMg} mg/day)` };
+}
+function fmt(n, d=3){ return Number(n.toFixed(d)).toString(); }
+
+function calcImpurity(){
+  const val = parseFloat(document.getElementById('mdd-value').value);
+  const unit = document.getElementById('mdd-unit').value;
+  if(isNaN(val) || val <= 0){ return; }
+  const mddMg = unit === 'g' ? val * 1000 : val;
+  const mddG = mddMg / 1000;
+
+  const q3a = q3aThresholds(mddMg, mddG);
+
+  const rtQ3B = mddG <= 1 ? 0.10 : 0.05;
+  const { idPct, idTDI, qualPct, qualTDI } = q3bIdQualThresholds(mddMg);
+  const idBindB = bindingValue(mddMg, idPct, idTDI);
+  const qualBindB = bindingValue(mddMg, qualPct, qualTDI);
+
+  const results = document.getElementById('impurity-results');
+  const row = (label, sub, bind) => `
+    <div class="detail-row"><div class="detail-label">${label}${sub?`<br><span style="font-weight:400; text-transform:none; font-size:10px;">${sub}</span>`:''}</div><div class="detail-val"><strong>${fmt(bind.pct,3)}%</strong> ≈ <strong>${fmt(bind.mg,3)} mg/day</strong><br><span style="color:var(--ink-muted); font-size:11px;">${bind.basis}</span></div></div>
+  `;
+  const rtRow = (pct) => `<div class="detail-row"><div class="detail-label">Reporting threshold</div><div class="detail-val"><strong>${pct}%</strong> — any impurity ≥ this level must be reported (≈ ${fmt(mddMg*pct/100,3)} mg/day)</div></div>`;
+
+  results.innerHTML = `
+    <div class="card">
+      <div class="card-top"><div><div class="card-title">Drug Substance (API)</div><div class="card-mono">ICH Q3A(R2) · MDD ${fmt(mddMg,2)} mg/day (${fmt(mddG,3)} g/day)</div></div></div>
+      <div class="card-body" style="margin-top:12px;">
+        ${rtRow(q3a.reportingPct)}
+        ${row('Identification threshold', '(unspecified impurity limit)', q3a.idResult)}
+        ${row('Qualification threshold', '(specified impurity limit)', q3a.qualResult)}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-top"><div><div class="card-title">Drug Product (Finished Dose)</div><div class="card-mono">ICH Q3B(R2) · MDD ${fmt(mddMg,2)} mg/day (${fmt(mddG,3)} g/day)</div></div></div>
+      <div class="card-body" style="margin-top:12px;">
+        ${rtRow(rtQ3B)}
+        ${row('Identification threshold', '(unspecified impurity limit)', idBindB)}
+        ${row('Qualification threshold', '(specified impurity limit)', qualBindB)}
+      </div>
+    </div>
+  `;
+}
+calcImpurity();
+calcNitrosamine();
+function calcArrhenius(){
+  const Ea = parseFloat(document.getElementById('ea').value);
+  const T1 = parseFloat(document.getElementById('t1').value) + 273.15;
+  const T2 = parseFloat(document.getElementById('t2').value) + 273.15;
+  const k1 = parseFloat(document.getElementById('k1').value);
+  const R = 0.0019872; // kcal/mol·K
+  const k2 = k1 * Math.exp(-(Ea/R) * (1/T2 - 1/T1));
+  const out = document.getElementById('calc-out');
+  out.querySelector('.calc-result-num').textContent = k2.toFixed(3) + ' %/month';
+  out.querySelector('.calc-result-label').textContent = `Predicted degradation rate at ${document.getElementById('t2').value}°C (from ${document.getElementById('t1').value}°C stress data)`;
+}
+calcArrhenius();
+
+function applyStabilityLock(){
+  const banner = document.getElementById('stability-locked-banner');
+  const profileDiv = document.getElementById('stability-rld-profile');
+  if(!banner) return;
+  if(lockedRldProduct && lockedRldProduct.stabilityProfile){
+    banner.style.display = 'flex';
+    document.getElementById('stability-locked-name').textContent = `Showing RLD stability data for: ${lockedRldProduct.brand} (${lockedRldProduct.inn})`;
+    const s = lockedRldProduct.stabilityProfile;
+    profileDiv.innerHTML = `
+      <div class="card">
+        <div class="card-top"><div><div class="card-title">${lockedRldProduct.brand} — stability profile (from public assessment report)</div></div></div>
+        <div class="card-body" style="margin-top:10px;">
+          <div class="detail-row"><div class="detail-label">Shelf life</div><div class="detail-val">${s.shelfLife}</div></div>
+          <div class="detail-row"><div class="detail-label">Storage conditions</div><div class="detail-val">${s.storageConditions}</div></div>
+          <div class="detail-row"><div class="detail-label">In-use stability</div><div class="detail-val">${s.inUse}</div></div>
+          <div class="detail-row"><div class="detail-label">Photostability</div><div class="detail-val">${s.photostability}</div></div>
+          <div class="detail-note">Source: ${s.source}</div>
+        </div>
+      </div>
+    `;
+  } else {
+    banner.style.display = 'none';
+    profileDiv.innerHTML = lockedRldProduct ? `<div class="ledger-empty">No stability profile recorded yet for ${lockedRldProduct.brand} in this sample set.</div>` : '';
+  }
+}
+
+/* ---------------- CMC WRITER ---------------- */
+const cmcSections = [
+  {code:'3.2.P.1', title:'Description and Composition', draft:'The drug product is presented as a [dosage form] containing [strength] of [active ingredient] as the active pharmaceutical ingredient. The qualitative and quantitative composition is provided in Table 3.2.P.1-1, including the function of each excipient.'},
+  {code:'3.2.P.2', title:'Pharmaceutical Development', draft:'This section summarizes the development studies conducted to establish the dosage form, formulation, manufacturing process, container closure system, microbiological attributes, and usage instructions are appropriate for the intended purpose. QbD principles per ICH Q8(R2) were applied, including definition of the Quality Target Product Profile (QTPP) and identification of Critical Quality Attributes (CQAs).'},
+  {code:'3.2.P.3', title:'Manufacture', draft:'Batch formula, manufacturing process description and process controls, controls of critical steps and intermediates, and process validation/evaluation are described here, consistent with the proposed commercial manufacturing site and scale.'},
+  {code:'3.2.P.4', title:'Control of Excipients', draft:'Specifications and justification of specifications for each excipient are provided, including compendial status (USP-NF/EP/JP) and any non-compendial excipient characterization.'},
+  {code:'3.2.P.5', title:'Control of Drug Product', draft:'Specification, analytical procedures, and validation summary for the drug product are presented, along with batch analyses and justification of the specification acceptance criteria.'},
+  {code:'3.2.P.8', title:'Stability', draft:'A summary of the stability studies conducted (stress, accelerated, and long-term per ICH Q1A(R2)), the storage conditions tested, and the proposed shelf life and storage statement are provided, supported by the post-approval stability protocol.'},
+];
+let activeCmc = 0;
+const toc = document.getElementById('cmc-toc');
+const editor = document.getElementById('cmc-editor');
+function renderCmc(){
+  toc.innerHTML = '';
+  cmcSections.forEach((s,i)=>{
+    const el = document.createElement('div');
+    el.className = 'cmc-toc-item' + (i===activeCmc?' active':'');
+    el.innerHTML = `<span class="cmc-toc-num">${s.code}</span>${s.title}`;
+    el.addEventListener('click', ()=>{ activeCmc = i; renderCmc(); });
+    toc.appendChild(el);
+  });
+  const s = cmcSections[activeCmc];
+  editor.innerHTML = `
+    <div class="cmc-section-code">MODULE ${s.code}</div>
+    <div class="cmc-section-title">${s.title}</div>
+    <textarea id="cmc-textarea">${s.draft}</textarea>
+    <div class="cmc-actions">
+      <button class="btn-solid" onclick="expandCmc()">Expand with AI reasoning</button>
+      <button class="btn-ghost" onclick="tightenCmc()">Tighten to regulatory tone</button>
+    </div>
+  `;
+}
+async function expandCmc(){
+  const ta = document.getElementById('cmc-textarea');
+  const original = ta.value;
+  ta.value = original + '\n\n[Generating expanded draft…]';
+  ta.disabled = true;
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 500,
+        system: "You are a CMC regulatory writer. Expand the given CTD Module 3.2.P draft paragraph into a fuller, realistic regulatory-style draft (150-220 words), formal tone, no markdown, no headers, plain prose only, placeholders in [brackets] where product-specific data is needed.",
+        messages: [{role:'user', content: original}]
+      })
+    });
+    const data = await response.json();
+    const text = (data.content || []).filter(c=>c.type==='text').map(c=>c.text).join('\n');
+    ta.value = text || original;
+  }catch(e){
+    ta.value = original;
+  }
+  ta.disabled = false;
+}
+async function tightenCmc(){
+  const ta = document.getElementById('cmc-textarea');
+  const original = ta.value;
+  ta.disabled = true;
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 400,
+        system: "You are a CMC regulatory writer. Rewrite the given text to be tighter, more formal, and consistent with CTD Module 3.2.P regulatory tone. Plain prose only, no markdown, no headers, keep [bracketed placeholders] as-is.",
+        messages: [{role:'user', content: original}]
+      })
+    });
+    const data = await response.json();
+    const text = (data.content || []).filter(c=>c.type==='text').map(c=>c.text).join('\n');
+    ta.value = text || original;
+  }catch(e){
+    ta.value = original;
+  }
+  ta.disabled = false;
+}
+renderCmc();
+
+/* ---------------- DATABASE LOADING (sql.js) ---------------- */
+// Rebuilds approvedProducts / patentData / landscapeData / rldForQ1Q2 from
+// isogenerix.db, then runs every render/populate function that depends on
+// them -- these were all removed from top-level execution and now only run
+// after this completes. isogenerix.db must be hosted alongside this HTML
+// file (same directory) for the fetch below to succeed.
+function rowsToObjects(execResult){
+  if(!execResult || !execResult.length) return [];
+  const { columns, values } = execResult[0];
+  return values.map(row => Object.fromEntries(columns.map((col, i) => [col, row[i]])));
+}
+
+async function loadDatabaseAndInit(){
+  try{
+    const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` });
+    const resp = await fetch('isogenerix.db');
+    if(!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
+    const buf = await resp.arrayBuffer();
+    const db = new SQL.Database(new Uint8Array(buf));
+
+    const productRows = rowsToObjects(db.exec('SELECT * FROM products'));
+
+    approvedProducts = productRows.map(row => {
+      const excipRows = rowsToObjects(db.exec(
+        `SELECT excipient FROM excipients WHERE product_id = '${row.id}' ORDER BY position`
+      ));
+      const dsRows = rowsToObjects(db.exec(
+        `SELECT test_name FROM spec_tests WHERE product_id = '${row.id}' AND test_type='drug_substance' ORDER BY position`
+      ));
+      const dpRows = rowsToObjects(db.exec(
+        `SELECT test_name FROM spec_tests WHERE product_id = '${row.id}' AND test_type='drug_product' ORDER BY position`
+      ));
+
+      const product = {
+        brand: row.brand, inn: row.inn, company: row.company, form: row.form, route: row.route,
+        mdd: row.mdd, mddNote: row.mdd_note, auth: row.auth, status: row.status, statusLabel: row.status_label,
+        epar: row.epar_url, apiForm: row.api_form, polymorphicForm: row.polymorphic_form,
+        bcs: row.bcs_text, bcsClass: row.bcs_class, structure: row.structure, specNote: row.spec_note,
+        pathway: row.pathway, genericStatus: row.generic_status,
+        excipients: excipRows.map(r => r.excipient),
+        dsTests: dsRows.map(r => r.test_name),
+        dpTests: dpRows.map(r => r.test_name),
+      };
+      if(row.basic_record){
+        product.basicRecord = true;
+      }
+      if(row.stability_shelf_life || row.stability_storage_conditions){
+        product.stabilityProfile = {
+          shelfLife: row.stability_shelf_life,
+          storageConditions: row.stability_storage_conditions,
+          inUse: row.stability_in_use,
+          photostability: row.stability_photostability,
+          source: row.stability_source,
+        };
+      }
+      product._id = row.id; // keep the DB id around for joins below
+      return product;
+    });
+
+    const idToProduct = Object.fromEntries(approvedProducts.map(p => [p._id, p]));
+
+    const patentRecordRows = rowsToObjects(db.exec('SELECT * FROM patent_records'));
+    patentData = patentRecordRows.map(pr => {
+      const p = idToProduct[pr.product_id];
+      const entryRows = rowsToObjects(db.exec(
+        `SELECT entry_type, ref, expiry FROM patent_entries WHERE patent_record_id = '${pr.id}' ORDER BY position`
+      ));
+      return {
+        brand: p ? p.brand : '(unknown)', inn: p ? p.inn : '(unknown)', bookType: pr.book_type,
+        entries: entryRows.map(e => ({ type: e.entry_type, ref: e.ref, expiry: e.expiry })),
+        note: pr.note,
+      };
+    });
+
+    const landscapeRows = rowsToObjects(db.exec('SELECT * FROM generic_landscape'));
+    landscapeData = landscapeRows.map(lr => {
+      const p = idToProduct[lr.product_id];
+      return {
+        brand: p ? p.brand : '(unknown)', inn: p ? p.inn : '(unknown)', rldNumber: lr.rld_number,
+        us: { status: lr.us_status, detail: lr.us_detail, source: lr.us_source },
+        ca: { status: lr.ca_status, detail: lr.ca_detail, source: lr.ca_source },
+      };
+    });
+
+    rldForQ1Q2 = approvedProducts.filter(p => !p.basicRecord && p.form && p.form.toLowerCase().includes('tablet'));
+
+    // Now run everything that was previously called at top level, in the same order.
+    populateMoleculeSearch();
+    renderApproved();
+    populateQ1Q2Select();
+    populateBiowaiverSelect();
+    renderBiowaiver();
+    renderPatents();
+    renderLandscape();
+
+    document.getElementById('db-loading-state').style.display = 'none';
+    document.getElementById('db-ready-state').style.display = 'block';
+  } catch(err){
+    console.error('Database load failed:', err);
+    document.getElementById('db-loading-state').style.display = 'none';
+    document.getElementById('db-error-state').style.display = 'block';
+  }
+}
+loadDatabaseAndInit();
+</script>
+</body>
+</html>
