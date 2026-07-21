@@ -451,6 +451,15 @@
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6 9 17l-5-5"/></svg>
       <span class="rail-label">Generic vs. RLD</span>
     </div>
+    <div class="nav-item" data-view="excipients">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v6l-5 9a2 2 0 0 0 1.8 3h12.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M8.5 3h7"/></svg>
+      <span class="rail-label">Excipient Library</span>
+    </div>
+    <div class="nav-item nav-disabled" data-coming-soon="true">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <span class="rail-label">CDMO Directory</span>
+      <span class="coming-soon-badge">Soon</span>
+    </div>
     <div class="nav-item" data-view="regulatory">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5l-8-3Z"/></svg>
       <span class="rail-label">Regulatory Intelligence</span>
@@ -466,17 +475,6 @@
     <div class="nav-item" data-view="nitrosamine">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 2.5 17a1.8 1.8 0 0 0 1.5 2.7h16a1.8 1.8 0 0 0 1.5-2.7L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z"/></svg>
       <span class="rail-label">Nitrosamine Risk</span>
-    </div>
-
-    <div class="nav-group-label">Directories</div>
-    <div class="nav-item" data-view="excipients">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v6l-5 9a2 2 0 0 0 1.8 3h12.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M8.5 3h7"/></svg>
-      <span class="rail-label">Excipient Library</span>
-    </div>
-    <div class="nav-item nav-disabled" data-coming-soon="true">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      <span class="rail-label">CDMO Directory</span>
-      <span class="coming-soon-badge">Soon</span>
     </div>
 
     <div class="nav-group-label">Authoring</div>
@@ -510,10 +508,22 @@
             </div>
 
             <div id="db-ready-state" style="display:none;">
-              <div class="search-landing-title">Find a reference product</div>
-              <div class="search-landing-sub">Search by molecule (INN), dosage form, and route of administration to surface the matching reference product(s) in this dataset.</div>
+              <div class="search-landing-title">Ask across public regulatory data</div>
+              <div class="search-landing-sub">Search the way you'd ask a colleague — by excipient, dosage form, BCS class, route, or packaging. Answers are grounded only in what's actually in this dataset today, and say so plainly when they're not.</div>
 
-              <div class="search-form" id="advanced-search-form">
+              <div class="ai-search-bar">
+                <input type="text" id="ai-search-input" placeholder='e.g. "Show approved tablets with croscarmellose sodium" or "Which RLDs are BCS Class II?"'>
+                <button class="btn-solid" style="padding:12px 20px; font-size:13.5px;" onclick="runIntelligentSearch()">Search</button>
+              </div>
+              <div class="ai-search-examples">
+                <div class="ai-example-chip" onclick="runIntelligentSearch('Show all approved products containing mannitol')">Show all approved products containing mannitol</div>
+                <div class="ai-example-chip" onclick="runIntelligentSearch('Which reference products are BCS Class II?')">Which reference products are BCS Class II?</div>
+                <div class="ai-example-chip" onclick="runIntelligentSearch('List products with patents expiring before 2029')">Patents expiring before 2029?</div>
+                <div class="ai-example-chip" onclick="runIntelligentSearch('Find products using croscarmellose sodium as disintegrant')">Products using croscarmellose sodium</div>
+              </div>
+
+              <div class="search-advanced-toggle" onclick="toggleAdvancedSearch()">Prefer dropdown filters instead? <span id="advanced-toggle-label">Show structured search →</span></div>
+              <div class="search-form" id="advanced-search-form" style="display:none;">
                 <div class="search-field">
                   <label>Molecule (INN)</label>
                   <select id="s-molecule"><option value="">Select a molecule…</option></select>
@@ -946,8 +956,9 @@ document.querySelectorAll('.nav-item').forEach(item=>{
     views.forEach(name=>{
       document.getElementById('view-'+name).classList.toggle('active', name===v);
     });
-    // Note: scoping to a molecule now persists across normal tab navigation --
-    // it only resets via the explicit "Change molecule"/"Show all products" links.
+    if(v === 'approved' && typeof unlockRldContext === 'function'){
+      unlockRldContext();
+    }
   });
 });
 
@@ -1255,7 +1266,7 @@ function buildRldCard(p, opts={}){
   }
 
   const analysisBtn = opts.showAnalysisLink !== false ? `<button class="btn-solid" style="padding:6px 12px; font-size:11.5px; margin-left:8px;" onclick="goToRldAnalysis(${idx})">Run Q1/Q2 + Biowaiver analysis →</button>` : '';
-  const scopeBtn = opts.showScopeLink !== false ? `<button class="btn-ghost" style="padding:6px 12px; font-size:11.5px; margin-left:8px;" onclick="scopeToolsToRld(${idx})">Focus Knowledge tools on this molecule</button>` : '';
+  const scopeBtn = (opts.showScopeLink !== false && opts.showAnalysisLink === false) ? `<button class="btn-ghost" style="padding:6px 12px; font-size:11.5px; margin-left:8px;" onclick="scopeToolsToRld(${idx})">Focus Knowledge tools on this molecule</button>` : '';
   return `
     <div class="card" style="max-width:860px; margin-bottom:12px;">
       <div class="card-top">
@@ -1344,11 +1355,18 @@ function resetMoleculeSearch(){
   document.getElementById('search-landing').style.display = 'flex';
   document.getElementById('search-results').style.display = 'none';
   document.getElementById('search-results').innerHTML = '';
+  document.getElementById('ai-search-input').value = '';
 }
-// toggleAdvancedSearch, runIntelligentSearch, and the AI query bar are no longer
-// wired into the landing page (moved to be part of the future Ask Isogenerix
-// premium feature instead) -- left defined/dormant rather than deleted, since
-// the underlying query logic is reused there.
+function toggleAdvancedSearch(){
+  const form = document.getElementById('advanced-search-form');
+  const label = document.getElementById('advanced-toggle-label');
+  const showing = form.style.display === 'block';
+  form.style.display = showing ? 'none' : 'block';
+  label.textContent = showing ? 'Show structured search →' : 'Hide structured search ←';
+}
+document.getElementById('ai-search-input').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); runIntelligentSearch(); }
+});
 function buildDatasetContext(){
   return approvedProducts.map(p => ({
     brand: p.brand, inn: p.inn, company: p.company, form: p.form, route: p.route,
@@ -1952,18 +1970,7 @@ function renderLandscape(){
     list.innerHTML = `<div class="ledger-empty">No US/Canada generic-landscape data recorded for ${lockedRldProduct.brand} in this sample set yet — it's likely a biologic with no small-molecule generic pathway (see Patent &amp; Exclusivity Tracker instead).</div>`;
     return;
   }
-  const mfrTable = (entries, marketLabel) => {
-    if(!entries || !entries.length) return `<div style="font-size:11.5px; color:var(--ink-muted); margin-top:6px;">No specific manufacturer names on file for ${marketLabel} yet.</div>`;
-    return `
-      <table class="data-table" style="margin-top:8px; font-size:11.5px;">
-        <tr><th>Company</th><th>Product / strength</th><th>Approved</th></tr>
-        ${entries.map(e => `<tr><td>${e.company}</td><td>${e.productName||''}${e.strength?' — '+e.strength:''}</td><td>${e.approvalDate||'—'}</td></tr>`).join('')}
-      </table>`;
-  };
-  list.innerHTML = data.map(p=>{
-    const matchedProduct = approvedProducts.find(ap => ap.inn === p.inn);
-    const mfrs = matchedProduct ? matchedProduct.genericManufacturers : {US:[],CA:[]};
-    return `
+  list.innerHTML = data.map(p=>`
     <div class="card" style="margin-bottom:12px;">
       <div class="card-top">
         <div>
@@ -1972,15 +1979,11 @@ function renderLandscape(){
         </div>
       </div>
       <div class="card-body" style="margin-top:10px;">
-        <div class="detail-row"><div class="detail-label">🇺🇸 United States</div><div class="detail-val"><strong>${p.us.status}</strong><br>${p.us.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.us.source}</span>
-          ${mfrTable(mfrs.US, 'the US')}
-        </div></div>
-        <div class="detail-row"><div class="detail-label">🇨🇦 Canada</div><div class="detail-val"><strong>${p.ca.status}</strong><br>${p.ca.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.ca.source}</span>
-          ${mfrTable(mfrs.CA, 'Canada')}
-        </div></div>
+        <div class="detail-row"><div class="detail-label">🇺🇸 United States</div><div class="detail-val"><strong>${p.us.status}</strong><br>${p.us.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.us.source}</span></div></div>
+        <div class="detail-row"><div class="detail-label">🇨🇦 Canada</div><div class="detail-val"><strong>${p.ca.status}</strong><br>${p.ca.detail}<br><span style="color:var(--ink-muted); font-size:11px;">Source: ${p.ca.source}</span></div></div>
       </div>
     </div>
-  `;}).join('') + `
+  `).join('') + `
     <div class="feed-item" style="border:none;">
       <div class="feed-body" style="line-height:1.6;">
         <strong>What a real pipeline would add:</strong> this proof-of-concept was hand-researched for two products. A production version would instead ingest FDA's Orange Book <code>products.txt</code> (RLD flag, applicant, approval date, TE code — updated monthly, daily for new generic approvals) and <code>patent.txt</code>/<code>exclusivity.txt</code>, plus Health Canada's Drug Product Database extract (~20,000 products, updated nightly) — joined to the EMA innovator profiles by active ingredient (INN), so every RLD in the system automatically shows its live US/Canada generic status without manual research per product.
@@ -2316,23 +2319,6 @@ function rowsToObjects(execResult){
   const { columns, values } = execResult[0];
   return values.map(row => Object.fromEntries(columns.map((col, i) => [col, row[i]])));
 }
-// For tables added after the original schema (e.g. nitrosamine_records,
-// generic_manufacturers): if the loaded isogenerix.db predates that table
-// (a stale file wasn't re-uploaded alongside a newer index.html), querying
-// it would throw "no such table" and crash the entire load. This degrades
-// that one feature to empty data instead of breaking everything else.
-let warnedMissingTables = new Set();
-function safeExec(db, sql, tableNameForWarning){
-  try{
-    return db.exec(sql);
-  } catch(err){
-    if(!warnedMissingTables.has(tableNameForWarning)){
-      console.warn(`Query against '${tableNameForWarning}' failed (likely a stale isogenerix.db missing this table -- re-upload the matching database file). Degrading to empty data for this feature.`, err);
-      warnedMissingTables.add(tableNameForWarning);
-    }
-    return [];
-  }
-}
 
 async function loadDatabaseAndInit(){
   try{
@@ -2368,13 +2354,8 @@ async function loadDatabaseAndInit(){
       const dpRows = rowsToObjects(db.exec(
         `SELECT test_name FROM spec_tests WHERE product_id = '${row.id}' AND test_type='drug_product' ORDER BY position`
       ));
-      const nitroRows = rowsToObjects(safeExec(db,
-        `SELECT status, compound_name, ai_limit_ng_day, ai_limit_note, detail, source FROM nitrosamine_records WHERE product_id = '${row.id}'`,
-        'nitrosamine_records'
-      ));
-      const mfrRows = rowsToObjects(safeExec(db,
-        `SELECT market, company, product_name, strength, approval_date, source FROM generic_manufacturers WHERE product_id = '${row.id}'`,
-        'generic_manufacturers'
+      const nitroRows = rowsToObjects(db.exec(
+        `SELECT status, compound_name, ai_limit_ng_day, ai_limit_note, detail, source FROM nitrosamine_records WHERE product_id = '${row.id}'`
       ));
 
       const product = {
@@ -2390,16 +2371,6 @@ async function loadDatabaseAndInit(){
           status: r.status, compoundName: r.compound_name, aiLimitNgDay: r.ai_limit_ng_day,
           aiLimitNote: r.ai_limit_note, detail: r.detail, source: r.source,
         })),
-        genericManufacturers: {
-          US: mfrRows.filter(r => r.market === 'US').map(r => ({
-            company: r.company, productName: r.product_name, strength: r.strength,
-            approvalDate: r.approval_date, source: r.source,
-          })),
-          CA: mfrRows.filter(r => r.market === 'CA').map(r => ({
-            company: r.company, productName: r.product_name, strength: r.strength,
-            approvalDate: r.approval_date, source: r.source,
-          })),
-        },
       };
       if(row.basic_record){
         product.basicRecord = true;
@@ -2455,13 +2426,6 @@ async function loadDatabaseAndInit(){
 
     document.getElementById('db-loading-state').style.display = 'none';
     document.getElementById('db-ready-state').style.display = 'block';
-
-    if(warnedMissingTables.size > 0){
-      const notice = document.createElement('div');
-      notice.style.cssText = 'max-width:640px; margin:0 auto 16px; padding:10px 14px; background:var(--flag-dim); border:1px solid #E3D4A8; border-radius:8px; font-size:12px; color:var(--flag); text-align:left;';
-      notice.innerHTML = `<strong>Heads up:</strong> your isogenerix.db is missing table(s): ${[...warnedMissingTables].join(', ')}. Those features will show as empty until you re-upload the current isogenerix.db alongside this index.html — both files need to be from the same version.`;
-      document.getElementById('db-ready-state').prepend(notice);
-    }
   } catch(err){
     console.error('Database load failed:', err);
     document.getElementById('db-loading-state').style.display = 'none';
