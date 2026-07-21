@@ -2333,6 +2333,23 @@ function rowsToObjects(execResult){
   const { columns, values } = execResult[0];
   return values.map(row => Object.fromEntries(columns.map((col, i) => [col, row[i]])));
 }
+// For tables added after the original schema (e.g. nitrosamine_records,
+// generic_manufacturers): if the loaded isogenerix.db predates that table
+// (a stale file wasn't re-uploaded alongside a newer index.html), querying
+// it would throw "no such table" and crash the entire load. This degrades
+// that one feature to empty data instead of breaking everything else.
+let warnedMissingTables = new Set();
+function safeExec(db, sql, tableNameForWarning){
+  try{
+    return db.exec(sql);
+  } catch(err){
+    if(!warnedMissingTables.has(tableNameForWarning)){
+      console.warn(`Query against '${tableNameForWarning}' failed (likely a stale isogenerix.db missing this table -- re-upload the matching database file). Degrading to empty data for this feature.`, err);
+      warnedMissingTables.add(tableNameForWarning);
+    }
+    return [];
+  }
+}
 
 async function loadDatabaseAndInit(){
   try{
@@ -2368,11 +2385,13 @@ async function loadDatabaseAndInit(){
       const dpRows = rowsToObjects(db.exec(
         `SELECT test_name FROM spec_tests WHERE product_id = '${row.id}' AND test_type='drug_product' ORDER BY position`
       ));
-      const nitroRows = rowsToObjects(db.exec(
-        `SELECT status, compound_name, ai_limit_ng_day, ai_limit_note, detail, source FROM nitrosamine_records WHERE product_id = '${row.id}'`
+      const nitroRows = rowsToObjects(safeExec(db,
+        `SELECT status, compound_name, ai_limit_ng_day, ai_limit_note, detail, source FROM nitrosamine_records WHERE product_id = '${row.id}'`,
+        'nitrosamine_records'
       ));
-      const mfrRows = rowsToObjects(db.exec(
-        `SELECT market, company, product_name, strength, approval_date, source FROM generic_manufacturers WHERE product_id = '${row.id}'`
+      const mfrRows = rowsToObjects(safeExec(db,
+        `SELECT market, company, product_name, strength, approval_date, source FROM generic_manufacturers WHERE product_id = '${row.id}'`,
+        'generic_manufacturers'
       ));
 
       const product = {
@@ -2453,6 +2472,13 @@ async function loadDatabaseAndInit(){
 
     document.getElementById('db-loading-state').style.display = 'none';
     document.getElementById('db-ready-state').style.display = 'block';
+
+    if(warnedMissingTables.size > 0){
+      const notice = document.createElement('div');
+      notice.style.cssText = 'max-width:640px; margin:0 auto 16px; padding:10px 14px; background:var(--flag-dim); border:1px solid #E3D4A8; border-radius:8px; font-size:12px; color:var(--flag); text-align:left;';
+      notice.innerHTML = `<strong>Heads up:</strong> your isogenerix.db is missing table(s): ${[...warnedMissingTables].join(', ')}. Those features will show as empty until you re-upload the current isogenerix.db alongside this index.html — both files need to be from the same version.`;
+      document.getElementById('db-ready-state').prepend(notice);
+    }
   } catch(err){
     console.error('Database load failed:', err);
     document.getElementById('db-loading-state').style.display = 'none';
